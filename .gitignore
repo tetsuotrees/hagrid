@@ -1,0 +1,22 @@
+# Build
+/target/
+debug/
+*.pdb
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.*
+
+# Background / conversation notes
+background/
