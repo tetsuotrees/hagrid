@@ -23,6 +23,18 @@ This folder is the operational source of truth for planning, execution, and arch
 - Any operations workflow change updates the relevant runbook under `docs/runbooks/`.
 - Any delegated execution packet must live under `docs/handoffs/` and include acceptance criteria.
 
+## Test Suite
+
+`cargo test` runs tests across multiple compilation targets:
+
+- **lib.rs** — unit tests (compiled once for the library crate)
+- **main.rs** — the same unit tests compiled again for the binary crate
+- **tests/*.rs** — integration test files (one binary per file)
+
+Because Rust compiles unit tests into both `lib` and `bin` targets, `cargo test` reports more **test invocations** than there are **unique test functions**. For example, 22 unit tests appear twice (lib + bin = 44 invocations), plus integration tests.
+
+When reporting test results, use the phrasing "`cargo test` passes with N test invocations across all targets" rather than "N tests". To count unique test functions, use `cargo test -- --list 2>/dev/null | grep -c ': test$'` on a single target.
+
 ## Evidence and Reporting
 
 Every execution stream should produce:
