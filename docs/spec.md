@@ -85,3 +85,13 @@ See `docs/adr/` for detailed records:
 - **v0.2** -- Policy + Watch + Rotate + Notifications
 - **v0.3** -- TUI + MCP server
 - **v0.4+** -- Provider-aware rotation, Linux support, plugins
+
+## Execution References
+
+Execution is coordinated through these documents:
+
+- [../README.md](../README.md): high-level product and usage context
+- [docs/README.md](README.md): documentation map and agent coordination contract
+- [docs/plan/post-v0.1-execution-plan.md](plan/post-v0.1-execution-plan.md): cross-workstream sequencing and acceptance criteria
+- [docs/runbooks/01-release-and-ci-bootstrap.md](runbooks/01-release-and-ci-bootstrap.md): first workstream procedure
+- [docs/handoffs/dev-agent-01-release-and-ci.md](handoffs/dev-agent-01-release-and-ci.md): first workstream execution packet for the dev agent

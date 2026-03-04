@@ -74,9 +74,13 @@ hagrid drift                       # Check for fingerprint mismatches within gro
 
 ## Architecture
 
-See `docs/` for the threat model and `docs/adr/` for architectural decision
-records covering the fingerprint format, key hierarchy, database encryption,
-grouping flow, and more.
+See [docs/README.md](docs/README.md) for the full documentation map.
+
+- [docs/spec.md](docs/spec.md): technical scope and command surface
+- [docs/threat-model.md](docs/threat-model.md): security boundaries
+- [docs/adr/README.md](docs/adr/README.md): architectural decision records
+- [docs/plan/post-v0.1-execution-plan.md](docs/plan/post-v0.1-execution-plan.md): post-v0.1 execution plan
+- [docs/runbooks/01-release-and-ci-bootstrap.md](docs/runbooks/01-release-and-ci-bootstrap.md): first execution stream runbook
 
 ## License
 
