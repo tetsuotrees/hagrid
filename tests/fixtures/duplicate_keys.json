@@ -1,0 +1,10 @@
+{
+  "production": {
+    "api_key": "sk-proj-PRODUCTION1234567890123456789012345678901234567890",
+    "backup_key": "ghp_productionbackup1234567890abcdefghij12"
+  },
+  "staging": {
+    "api_key": "sk-proj-STAGING00001234567890123456789012345678901234567890",
+    "backup_key": "ghp_stagingbackup00001234567890abcdefghij12"
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "api": {
+    "openai_key": "sk-proj-a8Bf2kL9mNpQrStUvWxYz0123456789012345678901234567",
+    "github_token": "ghp_abcdefghij1234567890abcdefghij123456"
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "myapp"
+  },
+  "settings": {
+    "debug": true,
+    "version": "1.0.0"
+  }
+}

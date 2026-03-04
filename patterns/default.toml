@@ -1,0 +1,128 @@
+[[pattern]]
+name = "openai_api_key"
+provider = "openai"
+display = "OpenAI API key"
+regex = 'sk-proj-[A-Za-z0-9_-]{40,}'
+entropy_min = 4.0
+
+[[pattern]]
+name = "openai_api_key_legacy"
+provider = "openai"
+display = "OpenAI API key (legacy)"
+regex = 'sk-[A-Za-z0-9]{48}'
+entropy_min = 4.0
+
+[[pattern]]
+name = "anthropic_api_key"
+provider = "anthropic"
+display = "Anthropic API key"
+regex = 'sk-ant-api03-[A-Za-z0-9_-]{90,}'
+entropy_min = 4.0
+
+[[pattern]]
+name = "aws_access_key"
+provider = "aws"
+display = "AWS access key"
+regex = 'AKIA[0-9A-Z]{16}'
+
+[[pattern]]
+name = "aws_secret_key"
+provider = "aws"
+display = "AWS secret key"
+regex = '[A-Za-z0-9/+=]{40}'
+entropy_min = 4.5
+context_regex = '(?i)(aws_secret|secret_access)'
+
+[[pattern]]
+name = "github_pat"
+provider = "github"
+display = "GitHub personal access token"
+regex = 'ghp_[A-Za-z0-9]{36}'
+
+[[pattern]]
+name = "github_pat_fine"
+provider = "github"
+display = "GitHub fine-grained token"
+regex = 'github_pat_[A-Za-z0-9_]{82}'
+
+[[pattern]]
+name = "github_oauth"
+provider = "github"
+display = "GitHub OAuth token"
+regex = 'gho_[A-Za-z0-9]{36}'
+
+[[pattern]]
+name = "gitlab_pat"
+provider = "gitlab"
+display = "GitLab personal access token"
+regex = 'glpat-[A-Za-z0-9_-]{20}'
+
+[[pattern]]
+name = "slack_bot_token"
+provider = "slack"
+display = "Slack bot token"
+regex = 'xoxb-[0-9]{10,13}-[0-9]{10,13}-[A-Za-z0-9]{24}'
+
+[[pattern]]
+name = "slack_user_token"
+provider = "slack"
+display = "Slack user token"
+regex = 'xoxp-[0-9]{10,13}-[0-9]{10,13}-[0-9]{10,13}-[A-Za-z0-9]{32}'
+
+[[pattern]]
+name = "stripe_secret"
+provider = "stripe"
+display = "Stripe secret key"
+regex = 'sk_live_[A-Za-z0-9]{24,}'
+
+[[pattern]]
+name = "stripe_test"
+provider = "stripe"
+display = "Stripe test key"
+regex = 'sk_test_[A-Za-z0-9]{24,}'
+
+[[pattern]]
+name = "sendgrid_api_key"
+provider = "sendgrid"
+display = "SendGrid API key"
+regex = 'SG\.[A-Za-z0-9_-]{22}\.[A-Za-z0-9_-]{43}'
+
+[[pattern]]
+name = "twilio_api_key"
+provider = "twilio"
+display = "Twilio API key"
+regex = 'SK[0-9a-fA-F]{32}'
+
+[[pattern]]
+name = "gcp_api_key"
+provider = "gcp"
+display = "Google Cloud API key"
+regex = 'AIza[A-Za-z0-9_-]{35}'
+
+[[pattern]]
+name = "private_key_pem"
+provider = "generic"
+display = "PEM private key"
+regex = '-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY-----'
+
+[[pattern]]
+name = "generic_secret_hex"
+provider = "generic"
+display = "Generic hex secret"
+regex = '[0-9a-fA-F]{64}'
+entropy_min = 4.0
+context_regex = '(?i)(secret|token|key|api_key|apikey|auth|credential|password)'
+
+[[pattern]]
+name = "npm_token"
+provider = "npm"
+display = "NPM access token"
+regex = 'npm_[A-Za-z0-9]{36}'
+
+[[pattern]]
+name = "docker_auth"
+provider = "docker"
+display = "Docker auth token"
+regex = '[A-Za-z0-9+/]{60,}={0,2}'
+entropy_min = 4.5
+context_regex = '(?i)(docker|registry|auth)'

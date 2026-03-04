@@ -1,0 +1,13 @@
+[api]
+openai_key = "sk-proj-a8Bf2kL9mNpQrStUvWxYz0123456789012345678901234567"
+
+[payments]
+api_secret = "EXAMPLE_b7d4e9f2a1c8365049dbe7f2a1c83650"
+
+[database]
+host = "localhost"
+port = 5432
+
+[app]
+name = "test-app"
+version = "0.1.0"
