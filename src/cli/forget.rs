@@ -11,41 +11,15 @@ pub fn run(target: &str) -> i32 {
         }
     };
 
-    // Spec: if starts with "ref:", treat as reference; otherwise group label first.
-    if target.starts_with("ref:") {
-        return forget_reference(&conn, target);
-    }
-
-    // Try as group label first
-    if try_forget_group(&conn, target) {
-        return 0;
-    }
-
-    // Fall back to reference ID if it looks like hex
-    if target.chars().all(|c| c.is_ascii_hexdigit()) && target.len() >= 6 {
-        return forget_reference(&conn, target);
-    }
-
-    eprintln!("{} '{}' not found as reference or group", "error:".red().bold(), target);
-    1
+    run_with_conn(&conn, target)
 }
 
-fn forget_reference(conn: &rusqlite::Connection, target: &str) -> i32 {
-    match super::resolve_ref_id(conn, target) {
-        Ok(identity_key) => match db::delete_reference(conn, &identity_key) {
-            Ok(true) => {
-                println!("{} Reference forgotten", "ok:".green().bold());
-                0
-            }
-            Ok(false) => {
-                eprintln!("{} reference not found", "error:".red().bold());
-                1
-            }
-            Err(e) => {
-                eprintln!("{} {}", "error:".red().bold(), e);
-                1
-            }
-        },
+pub fn run_with_conn(conn: &rusqlite::Connection, target: &str) -> i32 {
+    match super::resolve_target(conn, target) {
+        Ok(super::TargetResolution::Group(label)) => forget_group(conn, &label),
+        Ok(super::TargetResolution::Reference(identity_key)) => {
+            forget_reference_by_key(conn, &identity_key)
+        }
         Err(e) => {
             eprintln!("{} {}", "error:".red().bold(), e);
             1
@@ -53,16 +27,36 @@ fn forget_reference(conn: &rusqlite::Connection, target: &str) -> i32 {
     }
 }
 
-fn try_forget_group(conn: &rusqlite::Connection, label: &str) -> bool {
+fn forget_reference_by_key(conn: &rusqlite::Connection, identity_key: &str) -> i32 {
+    match db::delete_reference(conn, identity_key) {
+        Ok(true) => {
+            println!("{} Reference forgotten", "ok:".green().bold());
+            0
+        }
+        Ok(false) => {
+            eprintln!("{} reference not found", "error:".red().bold());
+            1
+        }
+        Err(e) => {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            1
+        }
+    }
+}
+
+fn forget_group(conn: &rusqlite::Connection, label: &str) -> i32 {
     match db::delete_group(conn, label) {
         Ok(true) => {
             println!("{} Group '{}' forgotten", "ok:".green().bold(), label);
-            true
+            0
         }
-        Ok(false) => false,
+        Ok(false) => {
+            eprintln!("{} group '{}' not found", "error:".red().bold(), label);
+            1
+        }
         Err(e) => {
             eprintln!("{} {}", "error:".red().bold(), e);
-            false
+            1
         }
     }
 }

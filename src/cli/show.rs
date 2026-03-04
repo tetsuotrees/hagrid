@@ -12,41 +12,24 @@ pub fn run(target: &str, json: bool) -> i32 {
         }
     };
 
-    // Spec disambiguation: if input starts with "ref:", treat as reference ID;
-    // otherwise treat as group label. If group not found and input looks like
-    // a hex prefix, fall back to reference lookup.
-    if target.starts_with("ref:") {
-        show_reference(&conn, target, json)
-    } else {
-        match db::get_group_by_label(&conn, target) {
-            Ok(Some(_)) => show_group(&conn, target, json),
-            Ok(None) => {
-                // Not a group — try as reference ID if it looks like hex
-                if target.chars().all(|c| c.is_ascii_hexdigit()) && target.len() >= 6 {
-                    show_reference(&conn, target, json)
-                } else {
-                    eprintln!("{} '{}' not found as group label or reference", "error:".red().bold(), target);
-                    1
-                }
-            }
-            Err(e) => {
-                eprintln!("{} {}", "error:".red().bold(), e);
-                1
-            }
+    run_with_conn(&conn, target, json)
+}
+
+pub fn run_with_conn(conn: &rusqlite::Connection, target: &str, json: bool) -> i32 {
+    match super::resolve_target(conn, target) {
+        Ok(super::TargetResolution::Group(label)) => show_group(conn, &label, json),
+        Ok(super::TargetResolution::Reference(identity_key)) => {
+            show_reference_by_key(conn, &identity_key, json)
+        }
+        Err(e) => {
+            eprintln!("{} {}", "error:".red().bold(), e);
+            1
         }
     }
 }
 
-fn show_reference(conn: &rusqlite::Connection, target: &str, json: bool) -> i32 {
-    let identity_key = match super::resolve_ref_id(conn, target) {
-        Ok(k) => k,
-        Err(e) => {
-            eprintln!("{} {}", "error:".red().bold(), e);
-            return 2;
-        }
-    };
-
-    let reference = match db::get_reference(conn, &identity_key) {
+fn show_reference_by_key(conn: &rusqlite::Connection, identity_key: &str, json: bool) -> i32 {
+    let reference = match db::get_reference(conn, identity_key) {
         Ok(Some(r)) => r,
         Ok(None) => {
             eprintln!("{} reference not found", "error:".red().bold());

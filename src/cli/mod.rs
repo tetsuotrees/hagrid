@@ -64,3 +64,41 @@ pub fn resolve_ref_id(
         }
     }
 }
+
+/// Result of resolving a CLI target argument.
+#[derive(Debug, Clone, PartialEq)]
+pub enum TargetResolution {
+    /// Resolved to a group label.
+    Group(String),
+    /// Resolved to a full reference identity key.
+    Reference(String),
+}
+
+/// Resolve a CLI target to either a group label or a reference identity key.
+///
+/// Disambiguation rules (per spec):
+/// - `ref:` prefix → always resolve as reference, bypass group lookup.
+/// - Otherwise → try group label first; if no group matches and input looks
+///   like a hex prefix (>= 6 chars, all hex digits), fall back to reference.
+pub fn resolve_target(
+    conn: &rusqlite::Connection,
+    target: &str,
+) -> Result<TargetResolution, String> {
+    if target.starts_with("ref:") {
+        let id = resolve_ref_id(conn, target)?;
+        return Ok(TargetResolution::Reference(id));
+    }
+
+    match db::get_group_by_label(conn, target) {
+        Ok(Some(_)) => Ok(TargetResolution::Group(target.to_string())),
+        Ok(None) => {
+            if target.chars().all(|c| c.is_ascii_hexdigit()) && target.len() >= 6 {
+                let id = resolve_ref_id(conn, target)?;
+                Ok(TargetResolution::Reference(id))
+            } else {
+                Err(format!("'{}' not found as group label or reference", target))
+            }
+        }
+        Err(e) => Err(e.to_string()),
+    }
+}
