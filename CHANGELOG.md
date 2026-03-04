@@ -6,10 +6,6 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
-### Planned
-
-- v0.1.0 release hardening artifacts and CI policy enforcement
-
 ## [0.1.0] - 2026-03-04
 
 ### Added
