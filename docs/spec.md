@@ -51,6 +51,25 @@ HKDF-SHA256:
     hagrid forget <ref-id|group-label>
     hagrid export [--format json|csv]
 
+## CLI Commands (v0.2)
+
+    hagrid audit [--json]
+
+### Policy Engine
+
+The `hagrid audit` command evaluates secrets against configurable policy rules
+defined in `~/.hagrid/policies.toml`. Each policy rule specifies:
+
+- `name` -- human-readable rule name
+- `match` -- glob pattern(s) matched against `provider_pattern` (string or array; `"*"` matches all refs including those with no provider)
+- `max_references` -- maximum allowed unique references (deduped by file_path + fingerprint)
+- `no_git` -- violation if matched secrets appear in git-tracked files
+- `max_age_days` / `warn_at_days` -- staleness thresholds
+- `require_vault` -- stub (returns warning, not yet implemented)
+
+Policy evaluation scopes to `ScanStatus::Present` references only. Exit code 4
+indicates policy violations; warnings-only or all-pass returns 0.
+
 ## Exit Codes
 
 - 0 -- success
@@ -78,6 +97,7 @@ See `docs/adr/` for detailed records:
 - ADR-006: DB constraints (unique keys, label rules, deduplication)
 - ADR-007: MCP naming (hagrid_* namespace, v0.3)
 - ADR-008: Platform scope (macOS-only v0.1)
+- ADR-009: Policy engine (glob matching, evaluation scope, exit codes)
 
 ## Milestone Plan
 
@@ -95,3 +115,5 @@ Execution is coordinated through these documents:
 - [docs/plan/post-v0.1-execution-plan.md](plan/post-v0.1-execution-plan.md): cross-workstream sequencing and acceptance criteria
 - [docs/runbooks/01-release-and-ci-bootstrap.md](runbooks/01-release-and-ci-bootstrap.md): first workstream procedure
 - [docs/handoffs/dev-agent-01-release-and-ci.md](handoffs/dev-agent-01-release-and-ci.md): first workstream execution packet for the dev agent
+- [docs/runbooks/02-policy-engine.md](runbooks/02-policy-engine.md): policy engine execution runbook
+- [docs/handoffs/dev-agent-02-policy.md](handoffs/dev-agent-02-policy.md): policy engine handoff packet

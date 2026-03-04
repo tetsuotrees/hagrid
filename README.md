@@ -58,6 +58,7 @@ hagrid suggest --review            # Review auto-detected grouping suggestions
 hagrid group "my-token" ref:a1 ref:b2  # Confirm a group from references
 hagrid list                        # List all secrets and groups
 hagrid drift                       # Check for fingerprint mismatches within groups
+hagrid audit                       # Evaluate policy rules and report violations
 ```
 
 ## Security Invariants

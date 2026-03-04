@@ -10,3 +10,4 @@
 | [006](006-db-constraints.md) | Database Constraints |
 | [007](007-mcp-naming.md) | MCP Naming and Transport |
 | [008](008-platform-scope.md) | Platform Scope |
+| [009](009-policy-engine.md) | Policy Engine |
