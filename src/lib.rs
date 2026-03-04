@@ -6,5 +6,6 @@ pub mod drift;
 pub mod group;
 pub mod index;
 pub mod keychain;
+pub mod policy;
 pub mod scan;
 pub mod suggest;

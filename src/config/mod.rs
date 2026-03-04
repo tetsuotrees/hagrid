@@ -209,6 +209,11 @@ pub fn patterns_path() -> PathBuf {
     hagrid_dir().join("patterns.toml")
 }
 
+/// Get the policies file path.
+pub fn policies_path() -> PathBuf {
+    hagrid_dir().join("policies.toml")
+}
+
 /// Load config from disk, falling back to defaults.
 pub fn load_config() -> Result<Config, ConfigError> {
     let path = config_path();

@@ -1,3 +1,4 @@
+pub mod audit;
 pub mod drift;
 pub mod export;
 pub mod forget;

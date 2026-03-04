@@ -10,6 +10,7 @@ mod drift;
 mod group;
 mod index;
 mod keychain;
+mod policy;
 mod scan;
 mod suggest;
 
@@ -118,6 +119,13 @@ enum Commands {
         #[arg(long, default_value = "json")]
         format: String,
     },
+
+    /// Evaluate policy rules and report violations
+    Audit {
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
 }
 
 fn main() {
@@ -143,6 +151,7 @@ fn main() {
         Commands::Drift { json } => cli::drift::run(json),
         Commands::Forget { target } => cli::forget::run(&target),
         Commands::Export { format } => cli::export::run(&format),
+        Commands::Audit { json } => cli::audit::run(json),
     };
 
     process::exit(exit_code);
