@@ -1,176 +1,38 @@
 //! Dogfooding test: exercises the scan engine against real local config paths.
 //!
-//! This test does NOT output secret values — only finding metadata (file paths,
-//! location discriminators, provider patterns, display labels). It validates
-//! the scan engine's behavior on real-world files.
+//! Tests that depend on real user files (shell configs, SSH keys) gracefully skip
+//! when running in CI or environments where those paths don't exist.
+//!
+//! Tests against the project's own fixtures use CARGO_MANIFEST_DIR and work
+//! everywhere.
 //!
 //! IMPORTANT: This test reads real files on the machine. It does NOT store,
 //! transmit, or log any secret values.
 
 use hagrid::config::Config;
 use hagrid::scan::engine::{self, ScanDepth};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
-fn expand(path: &str) -> std::path::PathBuf {
+fn expand(path: &str) -> PathBuf {
     hagrid::config::expand_tilde(path)
 }
 
-/// Run a Standard-depth scan against targeted real shell config files.
-/// These are small files that complete quickly.
-#[test]
-fn dogfood_scan_shell_configs() {
-    let config = Config::default();
-
-    let shell_files = &["~/.zshrc", "~/.bash_profile", "~/.profile"];
-
-    let mut total_files = 0;
-    let mut total_findings = 0;
-    let mut all_findings: Vec<(String, String, String, Option<String>)> = Vec::new();
-
-    for path_str in shell_files {
-        let path = expand(path_str);
-        if !path.exists() {
-            continue;
-        }
-
-        let result = engine::scan(&config, ScanDepth::Standard, Some(&path));
-        total_files += result.files_scanned;
-        total_findings += result.findings.len();
-
-        for f in &result.findings {
-            all_findings.push((
-                f.file_path.clone(),
-                f.location.discriminator.clone(),
-                f.display_label.clone(),
-                f.provider_pattern.clone(),
-            ));
-        }
-    }
-
-    eprintln!("\n=== DOGFOOD: SHELL CONFIGS ===");
-    eprintln!("Files scanned: {}", total_files);
-    eprintln!("Findings: {}", total_findings);
-    for f in &all_findings {
-        let basename = Path::new(&f.0)
-            .file_name()
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| f.0.clone());
-        eprintln!(
-            "  - {} @ {} [{}] ({})",
-            basename,
-            f.1,
-            f.3.as_deref().unwrap_or("heuristic"),
-            f.2
-        );
-    }
-    eprintln!("=== END ===\n");
-
-    assert!(total_files > 0, "should scan at least 1 shell config");
+fn project_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-/// SSH directory should detect PEM private keys.
-#[test]
-fn dogfood_ssh_detects_private_keys() {
-    let config = Config::default();
-    let ssh_dir = expand("~/.ssh");
-
-    if !ssh_dir.exists() {
-        eprintln!("SKIP: ~/.ssh does not exist");
-        return;
-    }
-
-    let result = engine::scan(&config, ScanDepth::Lite, Some(&ssh_dir));
-
-    let pem_findings: Vec<_> = result
-        .findings
-        .iter()
-        .filter(|f| f.provider_pattern.as_deref() == Some("private_key_pem"))
-        .collect();
-
-    eprintln!(
-        "\n=== DOGFOOD: SSH ===\nFiles: {}, Findings: {}, PEM keys: {}\n=== END ===\n",
-        result.files_scanned,
-        result.findings.len(),
-        pem_findings.len()
-    );
-
-    // Most dev machines have at least one SSH key
-    if pem_findings.is_empty() {
-        eprintln!("NOTE: No PEM private keys found in ~/.ssh (unusual but not a bug)");
-    }
+fn fixtures_dir() -> PathBuf {
+    project_root().join("tests").join("fixtures")
 }
 
-/// Lite scan should find a subset of what Standard finds.
-#[test]
-fn dogfood_lite_vs_standard_real_configs() {
-    let config = Config::default();
+// ===== Tests that work in CI (use project-relative paths) =====
 
-    let path = expand("~/.zshrc");
-    if !path.exists() {
-        eprintln!("SKIP: ~/.zshrc does not exist");
-        return;
-    }
-
-    let lite = engine::scan(&config, ScanDepth::Lite, Some(&path));
-    let standard = engine::scan(&config, ScanDepth::Standard, Some(&path));
-
-    eprintln!(
-        "\n=== DOGFOOD: LITE vs STANDARD ===\nLite: {} findings, Standard: {} findings\n=== END ===\n",
-        lite.findings.len(),
-        standard.findings.len()
-    );
-
-    assert!(
-        standard.findings.len() >= lite.findings.len(),
-        "Standard ({}) should find >= Lite ({})",
-        standard.findings.len(),
-        lite.findings.len()
-    );
-}
-
-/// Verify that the exclude rules actually filter out expected directories.
-#[test]
-fn dogfood_excludes_node_modules_and_target() {
-    use hagrid::scan::walker;
-
-    let config = Config::default();
-
-    // Scan just the hagrid project dir itself — known to have a target/ dir
-    let project = expand("~/Projects/hagrid");
-    if !project.exists() {
-        eprintln!("SKIP: ~/Projects/hagrid does not exist");
-        return;
-    }
-
-    let files = walker::walk_files(&config, Some(&project));
-
-    let violations: Vec<_> = files
-        .iter()
-        .filter(|f| {
-            let s = f.to_string_lossy();
-            s.contains("/node_modules/") || s.contains("/target/")
-        })
-        .collect();
-
-    eprintln!(
-        "\n=== DOGFOOD: EXCLUSIONS ===\nTotal files walked: {}\nExclusion violations: {}\n=== END ===\n",
-        files.len(),
-        violations.len()
-    );
-
-    assert!(
-        violations.is_empty(),
-        "found {} files in excluded directories",
-        violations.len()
-    );
-}
-
-/// Scan the hagrid project's own test fixtures — validates scan engine against
+/// Scan the project's own test fixtures — validates scan engine against
 /// known inputs with known expected outputs.
 #[test]
 fn dogfood_scan_own_fixtures() {
     let config = Config::default();
-    let fixtures = expand("~/Projects/hagrid/tests/fixtures");
+    let fixtures = fixtures_dir();
 
     let result = engine::scan(&config, ScanDepth::Standard, Some(&fixtures));
 
@@ -203,12 +65,12 @@ fn dogfood_scan_own_fixtures() {
     );
 }
 
-/// Scan a single known .env-style file path (the hagrid project's own fixture).
+/// Scan a single known .env-style file path.
 /// Validates structural parsing + pattern matching integration.
 #[test]
 fn dogfood_env_parsing_integration() {
     let config = Config::default();
-    let env_file = expand("~/Projects/hagrid/tests/fixtures/simple.env");
+    let env_file = fixtures_dir().join("simple.env");
 
     let result = engine::scan(&config, ScanDepth::Standard, Some(&env_file));
 
@@ -230,7 +92,154 @@ fn dogfood_env_parsing_integration() {
         .filter(|f| f.location.kind == hagrid::index::models::LocationKind::EnvVar)
         .collect();
 
-    // With Standard depth, structural parsing should produce EnvVar-typed locations
-    // (If this is 0, it means structural parser output is being deduped away or not working)
     eprintln!("EnvVar-typed findings: {}", env_findings.len());
+}
+
+/// Verify that the exclude rules actually filter out target/ directory.
+#[test]
+fn dogfood_excludes_target_dir() {
+    use hagrid::scan::walker;
+
+    let config = Config::default();
+    let project = project_root();
+
+    let files = walker::walk_files(&config, Some(&project));
+
+    let violations: Vec<_> = files
+        .iter()
+        .filter(|f| {
+            let s = f.to_string_lossy();
+            s.contains("/node_modules/") || s.contains("/target/")
+        })
+        .collect();
+
+    eprintln!(
+        "\n=== DOGFOOD: EXCLUSIONS ===\nTotal files walked: {}\nExclusion violations: {}\n=== END ===\n",
+        files.len(),
+        violations.len()
+    );
+
+    assert!(
+        violations.is_empty(),
+        "found {} files in excluded directories",
+        violations.len()
+    );
+}
+
+// ===== Tests that require local env (gracefully skip in CI) =====
+
+/// Run a Standard-depth scan against targeted real shell config files.
+#[test]
+fn dogfood_scan_shell_configs() {
+    let config = Config::default();
+
+    let shell_files = &["~/.zshrc", "~/.bash_profile", "~/.profile"];
+    let mut found_any = false;
+
+    let mut total_files = 0;
+    let mut total_findings = 0;
+    let mut all_findings: Vec<(String, String, String, Option<String>)> = Vec::new();
+
+    for path_str in shell_files {
+        let path = expand(path_str);
+        if !path.exists() {
+            continue;
+        }
+
+        found_any = true;
+        let result = engine::scan(&config, ScanDepth::Standard, Some(&path));
+        total_files += result.files_scanned;
+        total_findings += result.findings.len();
+
+        for f in &result.findings {
+            all_findings.push((
+                f.file_path.clone(),
+                f.location.discriminator.clone(),
+                f.display_label.clone(),
+                f.provider_pattern.clone(),
+            ));
+        }
+    }
+
+    if !found_any {
+        eprintln!("SKIP: no shell config files found (CI environment)");
+        return;
+    }
+
+    eprintln!("\n=== DOGFOOD: SHELL CONFIGS ===");
+    eprintln!("Files scanned: {}", total_files);
+    eprintln!("Findings: {}", total_findings);
+    for f in &all_findings {
+        let basename = Path::new(&f.0)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| f.0.clone());
+        eprintln!(
+            "  - {} @ {} [{}] ({})",
+            basename,
+            f.1,
+            f.3.as_deref().unwrap_or("heuristic"),
+            f.2
+        );
+    }
+    eprintln!("=== END ===\n");
+}
+
+/// SSH directory should detect PEM private keys.
+#[test]
+fn dogfood_ssh_detects_private_keys() {
+    let config = Config::default();
+    let ssh_dir = expand("~/.ssh");
+
+    if !ssh_dir.exists() {
+        eprintln!("SKIP: ~/.ssh does not exist (CI environment)");
+        return;
+    }
+
+    let result = engine::scan(&config, ScanDepth::Lite, Some(&ssh_dir));
+
+    let pem_findings: Vec<_> = result
+        .findings
+        .iter()
+        .filter(|f| f.provider_pattern.as_deref() == Some("private_key_pem"))
+        .collect();
+
+    eprintln!(
+        "\n=== DOGFOOD: SSH ===\nFiles: {}, Findings: {}, PEM keys: {}\n=== END ===\n",
+        result.files_scanned,
+        result.findings.len(),
+        pem_findings.len()
+    );
+
+    if pem_findings.is_empty() {
+        eprintln!("NOTE: No PEM private keys found in ~/.ssh (unusual but not a bug)");
+    }
+}
+
+/// Lite scan should find a subset of what Standard finds.
+#[test]
+fn dogfood_lite_vs_standard() {
+    let config = Config::default();
+
+    let path = expand("~/.zshrc");
+    if !path.exists() {
+        eprintln!("SKIP: ~/.zshrc does not exist (CI environment)");
+        return;
+    }
+
+    let lite = engine::scan(&config, ScanDepth::Lite, Some(&path));
+    let standard = engine::scan(&config, ScanDepth::Standard, Some(&path));
+
+    eprintln!(
+        "\n=== DOGFOOD: LITE vs STANDARD ===\nLite: {} findings, Standard: {} findings\n=== END ===\n",
+        lite.findings.len(),
+        standard.findings.len()
+    );
+
+    assert!(
+        standard.findings.len() >= lite.findings.len(),
+        "Standard ({}) should find >= Lite ({})",
+        standard.findings.len(),
+        lite.findings.len()
+    );
 }
