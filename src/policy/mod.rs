@@ -1,6 +1,6 @@
 use regex::Regex;
 use serde::Deserialize;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use thiserror::Error;
 
 use crate::config;
@@ -217,38 +217,55 @@ fn eval_max_references(
         .copied()
         .collect();
 
-    // Dedupe by (file_path, fingerprint) per feedback #2
-    let mut seen = HashSet::new();
-    let deduped: Vec<&SecretReference> = matching
-        .iter()
-        .filter(|r| seen.insert((r.file_path.as_str(), r.fingerprint.as_str())))
-        .copied()
-        .collect();
+    // Group by fingerprint (each fingerprint = one logical secret).
+    // Within each group, dedupe by (file_path, fingerprint) to avoid
+    // overcounting dual-reference behavior from structural parsers.
+    let mut by_fingerprint: HashMap<&str, Vec<&SecretReference>> = HashMap::new();
+    for r in &matching {
+        by_fingerprint.entry(r.fingerprint.as_str()).or_default().push(r);
+    }
 
-    let count = deduped.len();
+    let mut violating_refs = Vec::new();
+    let mut worst_count: usize = 0;
 
-    if count > max {
+    for group in by_fingerprint.values() {
+        // Dedupe locations by (file_path, fingerprint) within this secret
+        let mut seen = HashSet::new();
+        let deduped: Vec<&&SecretReference> = group
+            .iter()
+            .filter(|r| seen.insert(r.file_path.as_str()))
+            .collect();
+
+        let count = deduped.len();
+        if count > worst_count {
+            worst_count = count;
+        }
+        if count > max {
+            for r in deduped {
+                violating_refs.push(AffectedRef {
+                    identity_key: r.identity_key.clone(),
+                    display_label: r.display_label.clone(),
+                    file_path: r.file_path.clone(),
+                });
+            }
+        }
+    }
+
+    if !violating_refs.is_empty() {
         PolicyResult {
             rule_name: rule.name.clone(),
             severity: Severity::Violation,
             message: format!(
-                "found {} unique references (max {})",
-                count, max
+                "secret(s) found in more than {} location(s) (worst: {})",
+                max, worst_count
             ),
-            affected_references: deduped
-                .iter()
-                .map(|r| AffectedRef {
-                    identity_key: r.identity_key.clone(),
-                    display_label: r.display_label.clone(),
-                    file_path: r.file_path.clone(),
-                })
-                .collect(),
+            affected_references: violating_refs,
         }
     } else {
         PolicyResult {
             rule_name: rule.name.clone(),
             severity: Severity::Pass,
-            message: format!("found {} unique references (max {})", count, max),
+            message: format!("all secrets within {} location limit", max),
             affected_references: Vec::new(),
         }
     }
@@ -362,7 +379,8 @@ fn eval_max_age(
 
     for r in &matching {
         let age = now.signed_duration_since(r.last_changed);
-        let age_days = age.num_days() as u64;
+        // Clamp to 0 for future timestamps (clock skew / import anomalies)
+        let age_days = age.num_days().max(0) as u64;
 
         if let Some(max) = max_days {
             if age_days > max {

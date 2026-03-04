@@ -82,9 +82,10 @@ fn max_references_pass_below_limit() {
 fn max_references_violation_exceeds_limit() {
     let (conn, _tmp) = setup_test_db();
     let now = Utc::now();
-    insert_ref(&conn, "bb00000000000000000000000000000000000000000000000000000000000001", "fp1", "/a", Some("aws_key"), ScanStatus::Present, now);
-    insert_ref(&conn, "bb00000000000000000000000000000000000000000000000000000000000002", "fp2", "/b", Some("aws_key"), ScanStatus::Present, now);
-    insert_ref(&conn, "bb00000000000000000000000000000000000000000000000000000000000003", "fp3", "/c", Some("aws_key"), ScanStatus::Present, now);
+    // One secret (same fingerprint) in 3 different locations → exceeds limit of 2
+    insert_ref(&conn, "bb00000000000000000000000000000000000000000000000000000000000001", "fp_same", "/a", Some("aws_key"), ScanStatus::Present, now);
+    insert_ref(&conn, "bb00000000000000000000000000000000000000000000000000000000000002", "fp_same", "/b", Some("aws_key"), ScanStatus::Present, now);
+    insert_ref(&conn, "bb00000000000000000000000000000000000000000000000000000000000003", "fp_same", "/c", Some("aws_key"), ScanStatus::Present, now);
 
     let mut p = make_policy("test", vec!["aws_*"]);
     p.max_references = Some(2);
@@ -109,18 +110,19 @@ fn max_references_match_filter_only_matching() {
 }
 
 #[test]
-fn max_references_different_fingerprints_counted_separately() {
+fn max_references_different_fingerprints_evaluated_independently() {
     let (conn, _tmp) = setup_test_db();
     let now = Utc::now();
-    // Two refs, same file, different fingerprints → 2 unique (file_path, fingerprint) tuples
-    insert_ref(&conn, "dd00000000000000000000000000000000000000000000000000000000000001", "fp_alpha", "/same/file", Some("aws_key"), ScanStatus::Present, now);
-    insert_ref(&conn, "dd00000000000000000000000000000000000000000000000000000000000002", "fp_beta", "/same/file", Some("aws_key"), ScanStatus::Present, now);
+    // Two different secrets (different fingerprints), each in 1 location.
+    // Per-secret counting: each secret has 1 location ≤ limit of 1. Pass.
+    insert_ref(&conn, "dd00000000000000000000000000000000000000000000000000000000000001", "fp_alpha", "/file_a", Some("aws_key"), ScanStatus::Present, now);
+    insert_ref(&conn, "dd00000000000000000000000000000000000000000000000000000000000002", "fp_beta", "/file_b", Some("aws_key"), ScanStatus::Present, now);
 
     let mut p = make_policy("test", vec!["aws_*"]);
     p.max_references = Some(1);
     let results = policy::evaluate_policies(&conn, &[p]).unwrap();
-    assert_eq!(results[0].severity, Severity::Violation);
-    assert_eq!(results[0].affected_references.len(), 2);
+    // Each secret is in only 1 location → no violation
+    assert_eq!(results[0].severity, Severity::Pass);
 }
 
 #[test]
@@ -381,9 +383,9 @@ fn glob_wildcard_matches_all_including_none_provider() {
     insert_ref(&conn, "ac00000000000000000000000000000000000000000000000000000000000002", "fp2", "/b", None, ScanStatus::Present, now);
 
     let mut p = make_policy("test", vec!["*"]);
-    p.max_references = Some(1);
+    p.max_references = Some(0);
     let results = policy::evaluate_policies(&conn, &[p]).unwrap();
-    // Both refs matched (including None provider), count=2 > limit=1 → violation
+    // Both refs matched (including None provider), each secret in 1 location > 0 → violation
     assert_eq!(results[0].severity, Severity::Violation);
     assert_eq!(results[0].affected_references.len(), 2);
 }
@@ -549,4 +551,41 @@ fn exit_code_fatal_error_returns_1() {
         Err(_) => 1,
     };
     assert_eq!(exit_code, 1);
+}
+
+// ── Regression tests ────────────────────────────────────────────────
+
+/// P1 regression: three unrelated secrets each in one location should NOT
+/// violate max_references=2. Counting is per-secret (per-fingerprint),
+/// not global across all matched refs.
+#[test]
+fn max_references_per_secret_not_global() {
+    let (conn, _tmp) = setup_test_db();
+    let now = Utc::now();
+    // Three distinct secrets (different fingerprints), each in exactly 1 location
+    insert_ref(&conn, "ca00000000000000000000000000000000000000000000000000000000000001", "fp_secret_a", "/a", Some("aws_key"), ScanStatus::Present, now);
+    insert_ref(&conn, "ca00000000000000000000000000000000000000000000000000000000000002", "fp_secret_b", "/b", Some("aws_key"), ScanStatus::Present, now);
+    insert_ref(&conn, "ca00000000000000000000000000000000000000000000000000000000000003", "fp_secret_c", "/c", Some("aws_key"), ScanStatus::Present, now);
+
+    let mut p = make_policy("test", vec!["aws_*"]);
+    p.max_references = Some(2);
+    let results = policy::evaluate_policies(&conn, &[p]).unwrap();
+    // Each secret appears in only 1 location (≤ 2) → pass
+    assert_eq!(results[0].severity, Severity::Pass);
+}
+
+/// P2 regression: a future last_changed timestamp (clock skew) should NOT
+/// cause a false max_age violation. Negative age is clamped to 0 days.
+#[test]
+fn max_age_future_timestamp_does_not_false_violate() {
+    let (conn, _tmp) = setup_test_db();
+    let future = Utc::now() + Duration::days(30);
+    insert_ref(&conn, "cb00000000000000000000000000000000000000000000000000000000000001", "fp1", "/a", Some("aws_key"), ScanStatus::Present, future);
+
+    let mut p = make_policy("test", vec!["aws_*"]);
+    p.max_age_days = Some(90);
+    p.warn_at_days = Some(60);
+    let results = policy::evaluate_policies(&conn, &[p]).unwrap();
+    // Future timestamp → age clamped to 0 days → well within limits → pass
+    assert_eq!(results[0].severity, Severity::Pass);
 }
