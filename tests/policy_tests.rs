@@ -513,44 +513,43 @@ fn scope_filter_removed_refs_excluded() {
     assert_eq!(results[0].affected_references[0].file_path, "/a");
 }
 
-// ── Exit-code precedence tests ──────────────────────────────────────
+// ── Exit-code precedence tests (handler-level) ─────────────────────
 
+/// Violations → exit code 4 through the actual audit handler.
 #[test]
 fn exit_code_violations_return_4() {
-    let results = [policy::PolicyResult {
-        rule_name: "test".to_string(),
-        severity: Severity::Violation,
-        message: "bad".to_string(),
-        affected_references: Vec::new(),
-    }];
-    let violations = results.iter().filter(|r| r.severity == Severity::Violation).count();
-    let exit_code = if violations > 0 { 4 } else { 0 };
+    let (conn, _tmp) = setup_test_db();
+    let now = Utc::now();
+    // One secret in 3 locations → violates max_references=2
+    insert_ref(&conn, "ec00000000000000000000000000000000000000000000000000000000000001", "fp_same", "/a", Some("aws_key"), ScanStatus::Present, now);
+    insert_ref(&conn, "ec00000000000000000000000000000000000000000000000000000000000002", "fp_same", "/b", Some("aws_key"), ScanStatus::Present, now);
+    insert_ref(&conn, "ec00000000000000000000000000000000000000000000000000000000000003", "fp_same", "/c", Some("aws_key"), ScanStatus::Present, now);
+
+    let mut p = make_policy("sprawl-check", vec!["aws_*"]);
+    p.max_references = Some(2);
+    let exit_code = hagrid::cli::audit::run_with_policies(&conn, &[p], false);
     assert_eq!(exit_code, 4);
 }
 
+/// Warnings only (no violations) → exit code 0 through the audit handler.
 #[test]
 fn exit_code_warnings_only_return_0() {
-    let results = [policy::PolicyResult {
-        rule_name: "test".to_string(),
-        severity: Severity::Warn,
-        message: "meh".to_string(),
-        affected_references: Vec::new(),
-    }];
-    let violations = results.iter().filter(|r| r.severity == Severity::Violation).count();
-    let exit_code = if violations > 0 { 4 } else { 0 };
+    let (conn, _tmp) = setup_test_db();
+    let now = Utc::now();
+    insert_ref(&conn, "ed00000000000000000000000000000000000000000000000000000000000001", "fp1", "/a", Some("aws_key"), ScanStatus::Present, now);
+
+    let mut p = make_policy("vault-check", vec!["aws_*"]);
+    p.require_vault = Some(true);
+    let exit_code = hagrid::cli::audit::run_with_policies(&conn, &[p], false);
     assert_eq!(exit_code, 0);
 }
 
+/// No policies → exit code 0 through the audit handler.
 #[test]
-fn exit_code_fatal_error_returns_1() {
-    // Simulate: if evaluate_policies returns an error, audit returns 1
-    let err = PolicyError::InvalidPattern("bad".to_string());
-    // In the CLI handler, any error maps to exit code 1
-    let exit_code = match Err::<Vec<policy::PolicyResult>, PolicyError>(err) {
-        Ok(_) => 0,
-        Err(_) => 1,
-    };
-    assert_eq!(exit_code, 1);
+fn exit_code_no_policies_return_0() {
+    let (conn, _tmp) = setup_test_db();
+    let exit_code = hagrid::cli::audit::run_with_policies(&conn, &[], true);
+    assert_eq!(exit_code, 0);
 }
 
 // ── Regression tests ────────────────────────────────────────────────

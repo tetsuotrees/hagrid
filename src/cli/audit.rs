@@ -11,6 +11,10 @@ pub fn run(json: bool) -> i32 {
         }
     };
 
+    run_with_conn(&conn, json)
+}
+
+pub fn run_with_conn(conn: &rusqlite::Connection, json: bool) -> i32 {
     let policies = match policy::load_policies() {
         Ok(p) => p,
         Err(e) => {
@@ -19,6 +23,14 @@ pub fn run(json: bool) -> i32 {
         }
     };
 
+    run_with_policies(conn, &policies, json)
+}
+
+pub fn run_with_policies(
+    conn: &rusqlite::Connection,
+    policies: &[policy::PolicyDef],
+    json: bool,
+) -> i32 {
     if policies.is_empty() {
         if json {
             println!(r#"{{"violations":0,"warnings":0,"results":[]}}"#);
@@ -28,7 +40,7 @@ pub fn run(json: bool) -> i32 {
         return 0;
     }
 
-    let results = match policy::evaluate_policies(&conn, &policies) {
+    let results = match policy::evaluate_policies(conn, policies) {
         Ok(r) => r,
         Err(e) => {
             eprintln!("{} {}", "error:".red().bold(), e);
