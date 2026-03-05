@@ -27,6 +27,7 @@ walkdir = "2"
 ignore = "0.4"
 colored = "2"
 thiserror = "1"
+notify = "6"
 rand = "0.8"
 
 [dev-dependencies]

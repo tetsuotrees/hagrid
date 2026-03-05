@@ -96,7 +96,7 @@ pub fn walk_files(config: &Config, path_override: Option<&Path>) -> Vec<PathBuf>
     files
 }
 
-fn should_include_file(path: &Path, max_size: u64, config: &Config) -> bool {
+pub fn should_include_file(path: &Path, max_size: u64, config: &Config) -> bool {
     // Check file size
     if let Ok(metadata) = std::fs::metadata(path) {
         if metadata.len() > max_size {
@@ -123,7 +123,7 @@ fn should_include_file(path: &Path, max_size: u64, config: &Config) -> bool {
     true
 }
 
-fn is_in_excluded_dir(path: &Path, exclude_dirs: &[String]) -> bool {
+pub fn is_in_excluded_dir(path: &Path, exclude_dirs: &[String]) -> bool {
     for component in path.components() {
         if let std::path::Component::Normal(name) = component {
             let name_str = name.to_string_lossy();
@@ -143,7 +143,7 @@ fn is_in_excluded_dir(path: &Path, exclude_dirs: &[String]) -> bool {
     false
 }
 
-fn is_likely_binary(path: &Path) -> bool {
+pub fn is_likely_binary(path: &Path) -> bool {
     let binary_extensions = [
         "exe", "dll", "so", "dylib", "o", "a", "lib",
         "png", "jpg", "jpeg", "gif", "bmp", "ico", "svg",

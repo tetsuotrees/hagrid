@@ -9,3 +9,4 @@ pub mod keychain;
 pub mod policy;
 pub mod scan;
 pub mod suggest;
+pub mod watch;

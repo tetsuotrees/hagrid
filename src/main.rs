@@ -13,6 +13,7 @@ mod keychain;
 mod policy;
 mod scan;
 mod suggest;
+mod watch;
 
 #[derive(Parser)]
 #[command(
@@ -126,6 +127,9 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+
+    /// Watch for file changes and re-scan automatically
+    Watch,
 }
 
 fn main() {
@@ -152,6 +156,7 @@ fn main() {
         Commands::Forget { target } => cli::forget::run(&target),
         Commands::Export { format } => cli::export::run(&format),
         Commands::Audit { json } => cli::audit::run(json),
+        Commands::Watch => cli::watch::run(),
     };
 
     process::exit(exit_code);

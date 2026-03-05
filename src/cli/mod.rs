@@ -10,6 +10,7 @@ pub mod show;
 pub mod status;
 pub mod suggest;
 pub mod ungroup;
+pub mod watch;
 
 use crate::config;
 use crate::index::{db, fingerprint};

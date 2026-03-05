@@ -55,7 +55,7 @@ pub fn scan(
     info!("found {} files to scan", files.len());
 
     for file_path in &files {
-        match scan_file(file_path, &patterns, depth) {
+        match scan_file_inner(file_path, &patterns, depth) {
             Ok(findings) => {
                 result.files_scanned += 1;
                 result.findings.extend(findings);
@@ -118,7 +118,19 @@ pub fn findings_to_references(
         .collect()
 }
 
-fn scan_file(
+/// Scan a single file and return deduplicated findings.
+/// Public entry point for watch mode's per-file re-scan.
+pub fn scan_single_file(
+    path: &Path,
+    patterns: &[CompiledPattern],
+    depth: ScanDepth,
+) -> Result<Vec<RawFinding>, String> {
+    let mut findings = scan_file_inner(path, patterns, depth)?;
+    dedup_findings(&mut findings);
+    Ok(findings)
+}
+
+fn scan_file_inner(
     path: &Path,
     patterns: &[CompiledPattern],
     depth: ScanDepth,
@@ -244,10 +256,31 @@ fn dedup_findings(findings: &mut Vec<RawFinding>) {
             .then(a.secret_value.cmp(&b.secret_value))
     });
 
+    // Pass 1: dedupe by exact (file_path, discriminator, value)
     let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
     findings.retain(|f| {
-        // Key: file_path + discriminator + value
         let key = format!("{}|{}|{}", f.file_path, f.location.discriminator, f.secret_value);
         seen.insert(key)
     });
+
+    // Pass 2 (D-1 fix): drop RawLine findings when a structurally-richer finding
+    // exists for the same (file_path, secret_value). In Standard depth, each secret
+    // can produce both a RawLine finding (from pattern matching) and a structural
+    // finding (EnvVar/JsonPath/etc from parsing). The structural finding is strictly
+    // better — it carries the key name as discriminator instead of a line number.
+    let structural: std::collections::HashSet<String> = findings
+        .iter()
+        .filter(|f| f.location.kind != LocationKind::RawLine)
+        .map(|f| format!("{}|{}", f.file_path, f.secret_value))
+        .collect();
+
+    if !structural.is_empty() {
+        findings.retain(|f| {
+            if f.location.kind != LocationKind::RawLine {
+                return true;
+            }
+            let key = format!("{}|{}", f.file_path, f.secret_value);
+            !structural.contains(&key)
+        });
+    }
 }
