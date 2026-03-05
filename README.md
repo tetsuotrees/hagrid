@@ -59,6 +59,7 @@ hagrid group "my-token" ref:a1 ref:b2  # Confirm a group from references
 hagrid list                        # List all secrets and groups
 hagrid drift                       # Check for fingerprint mismatches within groups
 hagrid audit                       # Evaluate policy rules and report violations
+hagrid watch                       # Watch for file changes and re-scan automatically
 ```
 
 ## Security Invariants

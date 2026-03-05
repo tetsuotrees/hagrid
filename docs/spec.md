@@ -54,6 +54,7 @@ HKDF-SHA256:
 ## CLI Commands (v0.2)
 
     hagrid audit [--json]
+    hagrid watch
 
 ### Policy Engine
 
@@ -69,6 +70,29 @@ defined in `~/.hagrid/policies.toml`. Each policy rule specifies:
 
 Policy evaluation scopes to `ScanStatus::Present` references only. Exit code 4
 indicates policy violations; warnings-only or all-pass returns 0.
+
+### Watch Mode
+
+The `hagrid watch` command starts a persistent daemon that monitors configured
+scan roots for file changes using OS-level filesystem events (`notify` crate).
+On detected Create/Modify events:
+
+1. Events are debounced (500ms window) to coalesce rapid writes.
+2. Each changed file is scanned at Standard depth via `scan_single_file()`.
+3. Findings are upserted into the database (upsert-only -- no `mark_unseen_as_removed`).
+4. Progress is reported to stderr.
+
+Watch mode applies the same exclusion filters as full scan (binary files,
+excluded dirs, hard-excluded paths, max file size). Deleted files are ignored
+(not treated as removal events).
+
+### D-1 Dedup Refinement
+
+In Standard depth, the scan engine now applies a second dedup pass that removes
+RawLine findings when a structurally-richer finding (EnvVar, JsonPath, TomlKey,
+ShellExport) exists for the same `(file_path, secret_value)`. This prevents
+dual-reference behavior where both the pattern matcher and structural parser
+report the same secret.
 
 ## Exit Codes
 
@@ -98,6 +122,7 @@ See `docs/adr/` for detailed records:
 - ADR-007: MCP naming (hagrid_* namespace, v0.3)
 - ADR-008: Platform scope (macOS-only v0.1)
 - ADR-009: Policy engine (glob matching, evaluation scope, exit codes)
+- ADR-010: Watch mode (debounced events, upsert-only writes, D-1 dedup)
 
 ## Milestone Plan
 
@@ -117,3 +142,5 @@ Execution is coordinated through these documents:
 - [docs/handoffs/dev-agent-01-release-and-ci.md](handoffs/dev-agent-01-release-and-ci.md): first workstream execution packet for the dev agent
 - [docs/runbooks/02-policy-engine.md](runbooks/02-policy-engine.md): policy engine execution runbook
 - [docs/handoffs/dev-agent-02-policy.md](handoffs/dev-agent-02-policy.md): policy engine handoff packet
+- [docs/runbooks/03-watch-mode.md](runbooks/03-watch-mode.md): watch mode execution runbook
+- [docs/handoffs/dev-agent-03-watch.md](handoffs/dev-agent-03-watch.md): watch mode handoff packet

@@ -8,6 +8,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ### Added
 
+- `hagrid watch` command for persistent file-change monitoring with debounced re-scan
+- `scan_single_file()` public API for per-file scanning (used by watch mode)
 - `hagrid audit [--json]` command for policy-based secret evaluation
 - policy engine with configurable rules (`~/.hagrid/policies.toml`)
   - `max_references`: limit secret sprawl (dedupes by file_path + fingerprint)
@@ -17,11 +19,17 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - glob-based pattern matching on `provider_pattern` (`*` matches all refs)
 - exit code 4 for policy violations
 - ADR-009: Policy engine design decisions
+- ADR-010: Watch mode design decisions
+
+### Fixed
+
+- D-1: Standard depth scan now coalesces duplicate RawLine + structural findings for the same secret/location (keeps the structurally-richer finding)
 
 ### Changed
 
 - extracted `resolve_target()` into `cli/mod.rs` for shared show/forget disambiguation
 - `show` and `forget` handlers expose `run_with_conn()` for deterministic CI testing
+- walker filter functions (`should_include_file`, `is_in_excluded_dir`, `is_likely_binary`) made public for reuse by watch module
 
 ## [0.1.0] - 2026-03-04
 
