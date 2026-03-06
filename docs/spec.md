@@ -174,3 +174,7 @@ Execution is coordinated through these documents:
 - [docs/handoffs/dev-agent-02-policy.md](handoffs/dev-agent-02-policy.md): policy engine handoff packet
 - [docs/runbooks/03-watch-mode.md](runbooks/03-watch-mode.md): watch mode execution runbook
 - [docs/handoffs/dev-agent-03-watch.md](handoffs/dev-agent-03-watch.md): watch mode handoff packet
+- [docs/runbooks/04-rotation.md](runbooks/04-rotation.md): rotation workflow execution runbook
+- [docs/handoffs/dev-agent-04-rotation.md](handoffs/dev-agent-04-rotation.md): rotation workflow handoff packet
+- [docs/runbooks/05-notifications.md](runbooks/05-notifications.md): notifications execution runbook
+- [docs/handoffs/dev-agent-05-notifications.md](handoffs/dev-agent-05-notifications.md): notifications handoff packet

@@ -1,122 +1,117 @@
 # Post-v0.1 Execution Plan
 
-Status date: 2026-03-04
+Status date: 2026-03-06
 
-This plan coordinates work after the v0.1 implementation merge so release, CI hardening, and v0.2 kickoff happen in a controlled sequence.
+This plan now tracks the repo after WS-7 landed on `origin/main`. The release,
+CI, policy, watch, and rotation streams are complete. The next scoped delivery
+for v0.2 is notifications.
 
-## Objectives
+## Current Baseline
 
-- release v0.1.0 cleanly with clear public documentation
-- establish non-optional quality gates in CI
-- dogfood in real environments and convert observations into fixtures/issues
-- close known cleanup items that reduce operator confusion
-- start v0.2 from a stable base with explicit acceptance criteria
+- `origin/main` at `8f54f75` (`WS-7: add transactional rotation workflow`)
+- `.github/workflows/ci.yml` exists and runs build, clippy, and test
+- `cargo test` currently passes with 175 test invocations across all targets
+- Completed v0.2 features:
+  - WS-5: policy engine + `hagrid audit`
+  - WS-6: watch mode + D-1 dedup refinement
+  - WS-7: transactional rotation workflow
 
-## Workstreams
+## Completed Streams
 
-### WS-1: v0.1 Release Hardening
+### WS-1 and WS-2: Release + CI
 
-Scope:
-
-- add/maintain `CHANGELOG.md`
-- draft release notes for `v0.1.0`
-- create and verify tag/release artifacts
-
-Deliverables:
-
-- changelog entry for `0.1.0`
-- release notes markdown
-- signed/annotated git tag (`v0.1.0`) and GitHub release
-
-Exit criteria:
-
-- release notes reflect shipped scope and known limitations
-- release tag resolves to the approved commit
-- no open "must-fix-before-release" issues
-
-### WS-2: CI/CD Quality Gates
-
-Scope:
-
-- add GitHub Actions CI for macOS
-- run build/clippy/test as required checks
-- document branch protection policy requirements
-
-Deliverables:
-
-- `.github/workflows/ci.yml`
-- required status checks configured on `main`
-- CI troubleshooting notes in runbook
-
-Exit criteria:
-
-- CI green on main branch head
-- PR merge blocked when checks fail
+Completed. Release metadata, release notes, CI workflow, and branch-protection
+documentation are in place.
 
 ### WS-3: Dogfooding and Signal Intake
 
-Scope:
-
-- run Hagrid against real local configs
-- collect false positives/missed detections
-- add fixtures/tests for reproducible findings
-
-Deliverables:
-
-- dogfooding log (issues or markdown summary)
-- new/updated fixtures and tests for each confirmed defect
-
-Exit criteria:
-
-- at least one full real-world scan cycle documented
-- each high-impact finding has either a fix or a tracked issue
+Completed. Findings were captured in
+`docs/reports/dogfooding-2026-03-04.md` and fed back into follow-up work.
 
 ### WS-4: Follow-up Cleanup
 
+Completed. CLI disambiguation coverage and documentation consistency updates
+landed before the v0.2 feature streams.
+
+### WS-5: Policy Engine
+
+Completed. `hagrid audit` shipped with exit code 4 for violations and coverage
+for policy matching, git checks, max-age handling, and disambiguation.
+
+### WS-6: Watch Mode
+
+Completed. `hagrid watch` shipped with debounced re-scan behavior and D-1
+dedup to prefer structural findings over duplicate `RawLine` entries.
+
+### WS-7: Rotation Workflow
+
+Completed. `hagrid rotate-info` and `hagrid rotate` shipped with path-aware
+JSON/TOML mutation, same-file transaction semantics, rollback on
+verification/index failure, and exit code 5 for partial failure.
+
+## Active Next Stream
+
+### WS-8: Notifications
+
+Objective:
+
+- complete the remaining v0.2 milestone item with a minimal, explicit-opt-in
+  notification path for actionable Hagrid events
+
 Scope:
 
-- add integration test for hex-like group-label resolution paths
-- clarify test counting language in docs/automation output
-- tighten CLI behavior notes where ambiguity exists
+- add notification configuration loading
+- add a notification event envelope that never includes secret values
+- add explicit-opt-in webhook delivery
+- emit notifications for:
+  - drift detection
+  - policy violations
+  - rotation failure or partial failure
+- keep notification failures isolated from the primary command outcome
 
-Deliverables:
+Scope out:
 
-- new integration tests for `show` and `forget` disambiguation
-- documentation update on test-invocation vs unique-test counting
+- watch-mode event streaming or per-file watch notifications
+- MCP server work
+- provider-managed rotation or vault integration
+- background daemons beyond existing command execution
+
+Required deliverables:
+
+1. `src/notify/mod.rs` (or equivalent) with notification models and delivery.
+2. Notification config support in `src/config/mod.rs`.
+3. Command integration for `drift`, `audit`, and `rotate`.
+4. Tests covering opt-in gating, payload redaction, delivery, and sink-failure
+   isolation.
+5. Docs:
+   - technical spec update
+   - runbook
+   - handoff
+   - ADR if the transport or failure model introduces a new architecture decision
 
 Exit criteria:
 
-- tests guard against regression in `deadbeef`-style labels
-- docs no longer report inconsistent test totals
-
-### WS-5: v0.2 Kickoff
-
-Scope:
-
-- policy engine and `hagrid audit`
-- v0.2 implementation slicing and backlog ordering
-
-Deliverables:
-
-- v0.2 kickoff design note and task board
-- first v0.2 PR scope defined (policy schema + audit command skeleton)
-
-Exit criteria:
-
-- first v0.2 PR merged with test coverage
+- `cargo build` passes
+- `cargo clippy --all-targets -- -D warnings` passes
+- `cargo test` passes across all targets
+- default operation performs no notification delivery and makes no network calls
+- notification payloads contain no secret values
+- delivery failures are reported but do not change the primary command exit code
+- at least one end-to-end test proves a configured sink receives an event
 
 ## Sequence
 
-1. WS-1 and WS-2 start immediately (parallel, with release cutoff gate in WS-1).
-2. WS-3 starts once WS-2 CI is live (dogfooding findings must be reproducible in CI).
-3. WS-4 runs continuously as defects emerge, but disambiguation test is prioritized in first pass.
-4. WS-5 starts only after WS-1 through WS-3 exit criteria are met.
+1. Execute WS-8 next.
+2. After WS-8, reassess whether v0.2 is ready for release hardening or needs a
+   short cleanup stream.
 
 ## Ownership and Handoff
 
-- Dev Agent owns execution of WS-1 first.
-- Review/Planning Agent validates acceptance criteria and updates this plan after each stream.
-- Every stream must include a handoff doc under `docs/handoffs/` before work starts.
+- Dev Agent owns execution of WS-8.
+- Review/Planning Agent validates acceptance criteria, reviews correctness and
+  safety, and updates this plan after each stream.
+- Every stream must include a handoff doc under `docs/handoffs/` before work
+  starts.
 
 ## Reporting Cadence
 
@@ -125,4 +120,3 @@ Exit criteria:
   - verification commands and outcomes
   - open risks
   - next recommended stream
-

@@ -11,10 +11,18 @@ This folder is the operational source of truth for planning, execution, and arch
 
 ## Active Execution Docs
 
-- [runbooks/01-release-and-ci-bootstrap.md](runbooks/01-release-and-ci-bootstrap.md): Step-by-step runbook for the first execution stream.
-- [handoffs/dev-agent-01-release-and-ci.md](handoffs/dev-agent-01-release-and-ci.md): Dev-agent handoff packet for immediate execution.
+- [plan/post-v0.1-execution-plan.md](plan/post-v0.1-execution-plan.md): Current stream sequencing and acceptance criteria.
+- [runbooks/05-notifications.md](runbooks/05-notifications.md): Step-by-step runbook for the next execution stream.
+- [handoffs/dev-agent-05-notifications.md](handoffs/dev-agent-05-notifications.md): Dev-agent handoff packet for WS-8.
 - [../CHANGELOG.md](../CHANGELOG.md): Release history and unreleased queue.
-- [releases/v0.1.0.md](releases/v0.1.0.md): v0.1.0 release notes draft.
+- [releases/v0.1.0.md](releases/v0.1.0.md): v0.1.0 release notes.
+
+## Recently Completed Streams
+
+- [runbooks/04-rotation.md](runbooks/04-rotation.md): WS-7 rotation workflow.
+- [handoffs/dev-agent-04-rotation.md](handoffs/dev-agent-04-rotation.md): WS-7 delivery handoff.
+- [runbooks/03-watch-mode.md](runbooks/03-watch-mode.md): WS-6 watch mode.
+- [handoffs/dev-agent-03-watch.md](handoffs/dev-agent-03-watch.md): WS-6 delivery handoff.
 
 ## Agent Coordination Contract
 
