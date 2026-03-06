@@ -3,7 +3,7 @@
 Date: 2026-03-06
 Prepared by: Review/Planning Agent
 Executor: Dev Agent
-**Status: Ready**
+**Status: Complete**
 
 ## Mission
 
@@ -13,13 +13,12 @@ This is a release-hardening stream, not a new feature stream. The goal is to
 produce a clean, release-ready branch with accurate docs, verified behavior,
 and clarified CI gating.
 
-## Current Baseline
+## Delivered Baseline
 
-- WS-5 through WS-8 are merged and pushed
-- `origin/main` at `bf0b2e8` (`WS-8: stabilize webhook notification tests`)
+- WS-9a commit: `f91db68` — v0.2.0 release docs and version bump
+- `cargo build` passes (v0.2.0)
+- `cargo clippy --all-targets -- -D warnings` is clean
 - `cargo test` passes with 190 test invocations across all targets
-- `.github/workflows/ci.yml` exists, but push-time required-check behavior still
-  needs confirmation/alignment
 
 ## Scope In
 
@@ -77,12 +76,46 @@ and clarified CI gating.
    blocker and stop before any release action.
 4. Prefer non-interactive smoke coverage in this stream.
 
-## Report Back Format
+## Delivered Results
 
-Provide a single summary with:
+### Commits
+- `f91db68` WS-9a: v0.2.0 release docs and version bump
 
-- commit hashes
-- exact verification command outcomes
-- CI run/check-name status
-- any blocker details
-- whether the branch is ready to push/tag on explicit approval
+### Files Created
+- `docs/releases/v0.2.0.md` — release notes with summary, highlights, exit
+  codes, security notes, known limitations, upgrade guidance
+
+### Files Modified
+- `Cargo.toml` — version bumped from 0.1.0 to 0.2.0
+- `CHANGELOG.md` — unreleased entries moved to [0.2.0] section
+
+### Verification Results
+```
+cargo build                                    # OK (v0.2.0)
+cargo clippy --all-targets -- -D warnings      # clean
+cargo test                                     # 190 tests passing
+```
+
+### CI/Check-Name Status
+- Workflow job name: `Build, Lint, Test` (ci.yml line 14)
+- Required status check name: `Build, Lint, Test`
+- **Names match.** The push-time bypass message (`Required status check
+  "Build, Lint, Test" is expected`) occurs because the check hasn't completed
+  at push time on direct pushes to main. This is expected GitHub behavior for
+  repos without branch-protection enforcement, not a naming mismatch.
+- No workflow changes needed.
+
+### Release Blockers
+None identified.
+
+### Non-Blocking Follow-ups
+- `require_vault` policy rule is a stub (documented in known limitations)
+- Watch-mode notifications intentionally deferred
+- Webhook tests depend on loopback socket access; CI environments that
+  restrict local binds may need adjustment
+- No end-to-end CLI-to-webhook integration test (unit + integration coverage
+  via `notify_tests.rs` is sufficient for v0.2.0)
+
+### Release Readiness
+**Branch is ready for explicit `v0.2.0` tag/publish approval.** No push,
+tag, or publish action has been taken — awaiting user request.
