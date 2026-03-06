@@ -1,6 +1,6 @@
 [package]
 name = "hagrid"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 description = "Keeper of Keys — local-first secret lifecycle management"
 license = "MIT"
