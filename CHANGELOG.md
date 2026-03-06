@@ -8,6 +8,15 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ### Added
 
+- opt-in webhook notifications for high-signal command outcomes (`~/.hagrid/notifications.toml`)
+  - `drift_detected` — emitted when `hagrid drift` finds group drift
+  - `policy_violations` — emitted when `hagrid audit` finds violations
+  - `rotation_failure` — emitted when `hagrid rotate` has partial or full failure
+  - typed `EventKind` enum with serde snake_case serialization
+  - configurable timeout, per-webhook event filtering, empty events = subscribe to all
+  - failure-isolated: config errors and delivery failures log to stderr, never alter exit codes
+  - payloads exclude secret values, identity keys, and member fingerprints
+- ADR-012: Opt-in webhook notification model and failure isolation
 - `hagrid rotate-info <group-label> [--json]` for pre-rotation group inspection
 - `hagrid rotate <group-label> [--backup]` for interactive secret rotation across group members
   - format-aware replacement: JSON (path-aware via pointer_mut), TOML (dotted-path), EnvVar/ShellExport (line-targeted with discriminator validation)

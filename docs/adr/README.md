@@ -13,3 +13,4 @@
 | [009](009-policy-engine.md) | Policy Engine |
 | [010](010-watch-mode.md) | Watch Mode |
 | [011](011-rotation-workflow.md) | Rotation Workflow |
+| [012](012-notifications.md) | Opt-In Webhook Notifications |

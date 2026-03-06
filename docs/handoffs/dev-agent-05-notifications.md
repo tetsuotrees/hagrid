@@ -1,8 +1,9 @@
 # Dev Agent Handoff: WS-8 Notifications
 
-Date: 2026-03-06  
-Prepared by: Review/Planning Agent  
+Date: 2026-03-06
+Prepared by: Review/Planning Agent
 Executor: Dev Agent
+**Status: Complete**
 
 ## Mission
 
@@ -12,14 +13,11 @@ The goal is to complete the remaining v0.2 milestone item with a minimal,
 explicit-opt-in notification path that is safe by default and does not weaken
 the repo's local-first posture.
 
-## Current Baseline
+## Delivered Baseline
 
-- WS-5 policy/audit is merged and pushed
-- WS-6 watch mode + D-1 dedup is merged and pushed
-- WS-7 transactional rotation is merged and pushed
-- latest pushed commit: `8f54f75`
-- `cargo test` currently passes with 175 test invocations across all targets
-- CI workflow exists at `.github/workflows/ci.yml`
+- WS-8a commit: `af7f4d8` — notify module, config, CLI integration, 15 tests
+- `cargo test` passes with 190 test invocations across all targets
+- `cargo clippy --all-targets -- -D warnings` is clean
 
 ## Scope In
 
@@ -86,12 +84,46 @@ the repo's local-first posture.
 3. Prefer a minimal sink model over a broad plugin system.
 4. If the chosen transport introduces a durable architectural rule, add an ADR.
 
-## Report Back Format
+## Delivered Results
 
-Provide:
+### Files Created
+- `src/notify/mod.rs` — notification engine (types, config loading, dispatch, payload builders)
+- `tests/notify_tests.rs` — 15 integration tests
+- `docs/adr/012-notifications.md` — ADR for opt-in webhook model
 
-- commit hashes
-- exact verification command outcomes
-- any new config file format introduced
-- open risks or deferred follow-ups
-- whether the branch is ready to push
+### Files Modified
+- `Cargo.toml` — added `ureq = "2"` dependency
+- `src/config/mod.rs` — added `notifications_path()`
+- `src/lib.rs` + `src/main.rs` — added `notify` module declarations
+- `src/cli/drift.rs` — emit `drift_detected` on drift
+- `src/cli/audit.rs` — emit `policy_violations` on violations
+- `src/cli/rotate.rs` — emit `rotation_failure` on failure
+- `CHANGELOG.md` — notification entries
+- `docs/spec.md` — notifications section, ADR-012 reference
+- `docs/adr/README.md` — ADR-012 entry
+- `docs/runbooks/05-notifications.md` — marked complete, finalized config format
+- `docs/handoffs/dev-agent-05-notifications.md` — updated with delivered results
+
+### Config Format Introduced
+`~/.hagrid/notifications.toml`:
+```toml
+enabled = true
+timeout_ms = 2000
+
+[[webhook]]
+name = "local-dev"
+url = "http://127.0.0.1:8787/hagrid"
+events = ["drift_detected", "policy_violations", "rotation_failure"]
+```
+
+### Verification
+```
+cargo build           # OK
+cargo clippy --all-targets -- -D warnings  # clean
+cargo test            # 190 tests passing
+```
+
+### Open Risks / Deferred Follow-ups
+- Watch-mode notifications intentionally deferred (too noisy, couples daemon to network)
+- No retry loop — best-effort delivery only
+- No TLS certificate pinning (ureq uses system roots)

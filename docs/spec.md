@@ -114,6 +114,34 @@ across all present members of a group:
 
 Exit code 5 indicates partial failure (>= 1 succeeded AND >= 1 failed).
 
+### Notifications
+
+Hagrid supports explicit-opt-in webhook notifications for high-signal command
+outcomes. Configuration lives in `~/.hagrid/notifications.toml`:
+
+```toml
+enabled = true
+timeout_ms = 2000
+
+[[webhook]]
+name = "local-dev"
+url = "http://127.0.0.1:8787/hagrid"
+events = ["drift_detected", "policy_violations", "rotation_failure"]
+```
+
+Behavior:
+- Missing file or `enabled = false` → no-op (zero network calls)
+- Malformed file → warning to stderr, no-op (never alters exit codes)
+- Empty `events` list on a webhook → subscribe to all event kinds
+- Delivery failures → warning to stderr, no effect on command exit code
+- Payloads contain metadata only (group labels, counts, file paths) — no
+  secret values, identity keys, or member fingerprints
+
+Emitters:
+- `hagrid drift` → `drift_detected` when drift is found (exit code 3)
+- `hagrid audit` → `policy_violations` when violations are found (exit code 4)
+- `hagrid rotate` → `rotation_failure` on partial (exit code 5) or full failure (exit code 1)
+
 ### D-1 Dedup Refinement
 
 In Standard depth, the scan engine now applies a second dedup pass that removes
@@ -153,6 +181,7 @@ See `docs/adr/` for detailed records:
 - ADR-009: Policy engine (glob matching, evaluation scope, exit codes)
 - ADR-010: Watch mode (debounced events, upsert-only, scan_single_file)
 - ADR-011: Rotation workflow (format-aware replacement, per-file transactions)
+- ADR-012: Notifications (opt-in webhooks, failure isolation, payload safety)
 
 ## Milestone Plan
 

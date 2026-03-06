@@ -1,11 +1,13 @@
 # Runbook 05: Notifications (WS-8)
 
+**Status: Complete** — Merged in commits `af7f4d8` (WS-8a) and WS-8b.
+
 ## Scope
 
 Implement the remaining v0.2 milestone item: notifications for actionable
 Hagrid events, while preserving the repo's local-first security posture.
 
-WS-8 should stay intentionally narrow:
+WS-8 stays intentionally narrow:
 
 - explicit opt-in only
 - webhook delivery only
@@ -27,7 +29,7 @@ Add notification config loading in `src/config/mod.rs`.
 
 Suggested file: `~/.hagrid/notifications.toml`
 
-Suggested schema:
+Config file: `~/.hagrid/notifications.toml`
 
 ```toml
 enabled = true
@@ -39,12 +41,12 @@ url = "http://127.0.0.1:8787/hagrid"
 events = ["drift_detected", "policy_violations", "rotation_failure"]
 ```
 
-Behavior requirements:
+Behavior:
 
-- missing config file is a no-op
-- `enabled = false` is a no-op
-- malformed config returns a normal command error only when notifications are
-  explicitly enabled
+- missing config file → no-op (default disabled config)
+- `enabled = false` → no-op
+- malformed config → warning to stderr, no-op (never alters exit codes)
+- empty `events` list on a webhook → subscribe to all event kinds
 
 ### 2. Notification Module
 
