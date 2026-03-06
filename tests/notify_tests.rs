@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::io::{Read, Write};
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 use std::time::Duration;
 
 use hagrid::drift::DriftCheckResult;
@@ -13,6 +13,52 @@ use hagrid::notify::{
 use hagrid::policy::{AffectedRef, PolicyResult, Severity};
 use hagrid::rotate::{FileRotateResult, RotateResult};
 use tempfile::TempDir;
+
+fn read_http_request(stream: &mut TcpStream) -> String {
+    let mut request = Vec::new();
+    let mut chunk = [0u8; 1024];
+    let mut header_end = None;
+    let mut content_length = 0usize;
+
+    loop {
+        let n = stream.read(&mut chunk).unwrap();
+        if n == 0 {
+            break;
+        }
+
+        request.extend_from_slice(&chunk[..n]);
+
+        if header_end.is_none() {
+            if let Some(pos) = request.windows(4).position(|window| window == b"\r\n\r\n") {
+                let end = pos + 4;
+                header_end = Some(end);
+
+                let headers = String::from_utf8_lossy(&request[..end]);
+                content_length = headers
+                    .lines()
+                    .find_map(|line| {
+                        line.strip_prefix("Content-Length: ")
+                            .and_then(|value| value.trim().parse::<usize>().ok())
+                    })
+                    .unwrap_or(0);
+            }
+        }
+
+        if let Some(end) = header_end {
+            if request.len() >= end + content_length {
+                break;
+            }
+        }
+    }
+
+    String::from_utf8_lossy(&request).to_string()
+}
+
+fn write_ok_response(stream: &mut TcpStream) {
+    let response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+    stream.write_all(response.as_bytes()).unwrap();
+    stream.flush().unwrap();
+}
 
 // ── Config loading tests ────────────────────────────────────────────
 
@@ -212,14 +258,8 @@ fn test_webhook_delivery_success() {
     // Spawn a thread to accept the connection and respond
     let handle = std::thread::spawn(move || {
         let (mut stream, _) = listener.accept().unwrap();
-        let mut buf = [0u8; 4096];
-        let n = stream.read(&mut buf).unwrap();
-        let request = String::from_utf8_lossy(&buf[..n]).to_string();
-
-        // Send a 200 response
-        let response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
-        stream.write_all(response.as_bytes()).unwrap();
-        stream.flush().unwrap();
+        let request = read_http_request(&mut stream);
+        write_ok_response(&mut stream);
 
         request
     });
@@ -304,17 +344,15 @@ fn test_webhook_event_filter_match() {
     // Accept the connection in a background thread
     let handle = std::thread::spawn(move || {
         let (mut stream, _) = listener.accept().unwrap();
-        let mut buf = [0u8; 4096];
-        let _ = stream.read(&mut buf);
-        let response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
-        stream.write_all(response.as_bytes()).unwrap();
-        true
+        let request = read_http_request(&mut stream);
+        write_ok_response(&mut stream);
+        request
     });
 
     dispatch_with_config(&config, &event);
 
-    let received = handle.join().unwrap();
-    assert!(received);
+    let request = handle.join().unwrap();
+    assert!(request.contains("drift_detected"));
 }
 
 #[test]
@@ -378,11 +416,8 @@ fn test_webhook_empty_events_receives_all() {
 
     let handle = std::thread::spawn(move || {
         let (mut stream, _) = listener.accept().unwrap();
-        let mut buf = [0u8; 4096];
-        let n = stream.read(&mut buf).unwrap();
-        let request = String::from_utf8_lossy(&buf[..n]).to_string();
-        let response = "HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n";
-        stream.write_all(response.as_bytes()).unwrap();
+        let request = read_http_request(&mut stream);
+        write_ok_response(&mut stream);
         request
     });
 
