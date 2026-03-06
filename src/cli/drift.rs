@@ -96,5 +96,12 @@ pub fn run(json: bool) -> i32 {
         }
     }
 
-    if any_drifted { 3 } else { 0 }
+    let exit_code = if any_drifted { 3 } else { 0 };
+
+    if any_drifted {
+        let event = crate::notify::build_drift_event(exit_code, &results);
+        crate::notify::dispatch(&event);
+    }
+
+    exit_code
 }

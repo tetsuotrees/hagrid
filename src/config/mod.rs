@@ -214,6 +214,11 @@ pub fn policies_path() -> PathBuf {
     hagrid_dir().join("policies.toml")
 }
 
+/// Get the notifications config file path.
+pub fn notifications_path() -> PathBuf {
+    hagrid_dir().join("notifications.toml")
+}
+
 /// Load config from disk, falling back to defaults.
 pub fn load_config() -> Result<Config, ConfigError> {
     let path = config_path();

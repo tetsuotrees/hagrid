@@ -10,6 +10,7 @@ mod drift;
 mod group;
 mod index;
 mod keychain;
+mod notify;
 mod policy;
 mod rotate;
 mod scan;

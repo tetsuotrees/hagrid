@@ -121,13 +121,20 @@ pub fn run(group_label: &str, backup: bool) -> i32 {
     );
 
     // Exit code precedence: 1 (all fail/fatal) > 5 (partial) > 0 (all ok)
-    if result.succeeded == 0 && result.failed > 0 {
+    let exit_code = if result.succeeded == 0 && result.failed > 0 {
         1
     } else if result.failed > 0 {
         5
     } else {
         0
+    };
+
+    if result.failed > 0 {
+        let event = crate::notify::build_rotate_event(exit_code, group_label, &result);
+        crate::notify::dispatch(&event);
     }
+
+    exit_code
 }
 
 /// Read a new secret value with confirmation. Returns None if cancelled or mismatched.

@@ -98,5 +98,12 @@ pub fn run_with_policies(
         }
     }
 
-    if violations > 0 { 4 } else { 0 }
+    let exit_code = if violations > 0 { 4 } else { 0 };
+
+    if violations > 0 {
+        let event = crate::notify::build_audit_event(exit_code, &results);
+        crate::notify::dispatch(&event);
+    }
+
+    exit_code
 }
