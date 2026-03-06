@@ -12,13 +12,15 @@ This folder is the operational source of truth for planning, execution, and arch
 ## Active Execution Docs
 
 - [plan/post-v0.1-execution-plan.md](plan/post-v0.1-execution-plan.md): Current stream sequencing and acceptance criteria.
-- [runbooks/05-notifications.md](runbooks/05-notifications.md): Step-by-step runbook for the next execution stream.
-- [handoffs/dev-agent-05-notifications.md](handoffs/dev-agent-05-notifications.md): Dev-agent handoff packet for WS-8.
+- [runbooks/06-release-hardening.md](runbooks/06-release-hardening.md): Step-by-step runbook for WS-9 release hardening.
+- [handoffs/dev-agent-06-release-hardening.md](handoffs/dev-agent-06-release-hardening.md): Dev-agent handoff packet for WS-9.
 - [../CHANGELOG.md](../CHANGELOG.md): Release history and unreleased queue.
 - [releases/v0.1.0.md](releases/v0.1.0.md): v0.1.0 release notes.
 
 ## Recently Completed Streams
 
+- [runbooks/05-notifications.md](runbooks/05-notifications.md): WS-8 notifications.
+- [handoffs/dev-agent-05-notifications.md](handoffs/dev-agent-05-notifications.md): WS-8 delivery handoff.
 - [runbooks/04-rotation.md](runbooks/04-rotation.md): WS-7 rotation workflow.
 - [handoffs/dev-agent-04-rotation.md](handoffs/dev-agent-04-rotation.md): WS-7 delivery handoff.
 - [runbooks/03-watch-mode.md](runbooks/03-watch-mode.md): WS-6 watch mode.

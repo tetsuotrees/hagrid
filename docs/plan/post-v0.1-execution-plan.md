@@ -2,19 +2,20 @@
 
 Status date: 2026-03-06
 
-This plan now tracks the repo after WS-7 landed on `origin/main`. The release,
-CI, policy, watch, and rotation streams are complete. The next scoped delivery
-for v0.2 is notifications.
+This plan now tracks the repo after WS-8 landed on `origin/main`. The v0.2
+feature streams are complete. The next scoped delivery is a short release-
+hardening pass to prepare `v0.2.0`.
 
 ## Current Baseline
 
-- `origin/main` at `8f54f75` (`WS-7: add transactional rotation workflow`)
+- `origin/main` at `bf0b2e8` (`WS-8: stabilize webhook notification tests`)
 - `.github/workflows/ci.yml` exists and runs build, clippy, and test
-- `cargo test` currently passes with 175 test invocations across all targets
+- `cargo test` currently passes with 190 test invocations across all targets
 - Completed v0.2 features:
   - WS-5: policy engine + `hagrid audit`
   - WS-6: watch mode + D-1 dedup refinement
   - WS-7: transactional rotation workflow
+  - WS-8: explicit-opt-in webhook notifications
 
 ## Completed Streams
 
@@ -49,65 +50,72 @@ Completed. `hagrid rotate-info` and `hagrid rotate` shipped with path-aware
 JSON/TOML mutation, same-file transaction semantics, rollback on
 verification/index failure, and exit code 5 for partial failure.
 
+### WS-8: Notifications
+
+Completed. `hagrid` now supports explicit-opt-in webhook notifications for
+drift, audit, and rotation failures with failure isolation, per-webhook event
+filtering, and payloads that exclude secret values.
+
 ## Active Next Stream
 
-### WS-8: Notifications
+### WS-9: v0.2 Release Hardening
 
 Objective:
 
-- complete the remaining v0.2 milestone item with a minimal, explicit-opt-in
-  notification path for actionable Hagrid events
+- prepare a release candidate for `v0.2.0`
+- close release-blocking documentation, verification, and CI-gating gaps
+- leave the repo ready for tag/publish on explicit user approval
 
 Scope:
 
-- add notification configuration loading
-- add a notification event envelope that never includes secret values
-- add explicit-opt-in webhook delivery
-- emit notifications for:
-  - drift detection
-  - policy violations
-  - rotation failure or partial failure
-- keep notification failures isolated from the primary command outcome
+- cut `v0.2.0` release documentation:
+  - `CHANGELOG.md`
+  - `docs/releases/v0.2.0.md`
+- verify and, if needed, fix CI or branch-protection check-name mismatch so the
+  required status check matches the actual workflow result
+- rerun build/clippy/test and a small CLI smoke pass for shipped v0.2 commands
+- patch any small release-blocking test or documentation gaps found during
+  hardening
+- document the exact release procedure and any remaining non-blocking follow-up
 
 Scope out:
 
-- watch-mode event streaming or per-file watch notifications
-- MCP server work
+- new user-facing features beyond release blockers
+- v0.3 TUI work
+- v0.3 MCP server work
 - provider-managed rotation or vault integration
-- background daemons beyond existing command execution
+- watch-mode notifications
+- automatic tagging/publishing without explicit user approval
 
 Required deliverables:
 
-1. `src/notify/mod.rs` (or equivalent) with notification models and delivery.
-2. Notification config support in `src/config/mod.rs`.
-3. Command integration for `drift`, `audit`, and `rotate`.
-4. Tests covering opt-in gating, payload redaction, delivery, and sink-failure
-   isolation.
-5. Docs:
-   - technical spec update
-   - runbook
-   - handoff
-   - ADR if the transport or failure model introduces a new architecture decision
+1. `CHANGELOG.md` with a `0.2.0` release entry.
+2. `docs/releases/v0.2.0.md` with release notes and verification checklist.
+3. Any workflow or documentation updates needed to align required CI checks with
+   the real workflow.
+4. Any targeted test/docs fixes required to make release claims accurate.
+5. A release-ready handoff summarizing final verification and remaining risks.
 
 Exit criteria:
 
 - `cargo build` passes
 - `cargo clippy --all-targets -- -D warnings` passes
 - `cargo test` passes across all targets
-- default operation performs no notification delivery and makes no network calls
-- notification payloads contain no secret values
-- delivery failures are reported but do not change the primary command exit code
-- at least one end-to-end test proves a configured sink receives an event
+- release notes accurately describe shipped v0.2 commands, security posture, and
+  known limitations
+- the CI required-check mismatch is resolved or documented with an explicit
+  blocker/escalation note
+- the repo is ready to tag `v0.2.0` once the user explicitly approves release
 
 ## Sequence
 
-1. Execute WS-8 next.
-2. After WS-8, reassess whether v0.2 is ready for release hardening or needs a
-   short cleanup stream.
+1. Execute WS-9 next.
+2. After WS-9, request explicit approval for `v0.2.0` tag/publish work.
+3. After `v0.2.0`, open v0.3 planning for TUI + MCP server.
 
 ## Ownership and Handoff
 
-- Dev Agent owns execution of WS-8.
+- Dev Agent owns execution of WS-9.
 - Review/Planning Agent validates acceptance criteria, reviews correctness and
   safety, and updates this plan after each stream.
 - Every stream must include a handoff doc under `docs/handoffs/` before work
