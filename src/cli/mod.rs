@@ -5,6 +5,8 @@ pub mod forget;
 pub mod group;
 pub mod init;
 pub mod list;
+pub mod rotate;
+pub mod rotate_info;
 pub mod scan;
 pub mod show;
 pub mod status;
@@ -23,8 +25,7 @@ pub fn open_db() -> Result<(rusqlite::Connection, fingerprint::DerivedKeys), Str
         return Err("database not found — run `hagrid init` first".to_string());
     }
 
-    let master_secret =
-        keychain::retrieve_master_secret().map_err(|e| e.to_string())?;
+    let master_secret = keychain::retrieve_master_secret().map_err(|e| e.to_string())?;
 
     let keys = fingerprint::derive_keys(&master_secret);
     let conn = db::open_db(&db_path, &keys.db_key).map_err(|e| e.to_string())?;
@@ -33,10 +34,7 @@ pub fn open_db() -> Result<(rusqlite::Connection, fingerprint::DerivedKeys), Str
 }
 
 /// Resolve a target that could be a ref ID or full identity key.
-pub fn resolve_ref_id(
-    conn: &rusqlite::Connection,
-    input: &str,
-) -> Result<String, String> {
+pub fn resolve_ref_id(conn: &rusqlite::Connection, input: &str) -> Result<String, String> {
     // If it's a full-length hex key, use directly
     if input.len() == 64 && input.chars().all(|c| c.is_ascii_hexdigit()) {
         return Ok(input.to_string());
@@ -57,7 +55,10 @@ pub fn resolve_ref_id(
         0 => Err(format!("no reference found matching '{}'", input)),
         1 => Ok(matches[0].to_string()),
         _ => {
-            let display: Vec<String> = matches.iter().map(|k| format!("ref:{}", &k[..6.min(k.len())])).collect();
+            let display: Vec<String> = matches
+                .iter()
+                .map(|k| format!("ref:{}", &k[..6.min(k.len())]))
+                .collect();
             Err(format!(
                 "ambiguous id {} — matches {}. Use a longer prefix or full identity key.",
                 input,
@@ -98,7 +99,10 @@ pub fn resolve_target(
                 let id = resolve_ref_id(conn, target)?;
                 Ok(TargetResolution::Reference(id))
             } else {
-                Err(format!("'{}' not found as group label or reference", target))
+                Err(format!(
+                    "'{}' not found as group label or reference",
+                    target
+                ))
             }
         }
         Err(e) => Err(e.to_string()),

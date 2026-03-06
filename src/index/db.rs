@@ -22,7 +22,10 @@ pub fn open_db(path: &Path, db_key: &[u8]) -> Result<Connection, DbError> {
     let conn = Connection::open(path)?;
 
     // Set the encryption key as a hex string
-    let hex_key = db_key.iter().map(|b| format!("{:02x}", b)).collect::<String>();
+    let hex_key = db_key
+        .iter()
+        .map(|b| format!("{:02x}", b))
+        .collect::<String>();
     conn.pragma_update(None, "key", format!("x'{}'", hex_key))?;
 
     // Verify the key works by trying a simple query
@@ -149,7 +152,10 @@ pub fn upsert_reference(conn: &Connection, r: &SecretReference) -> Result<(), Db
     Ok(())
 }
 
-pub fn get_reference(conn: &Connection, identity_key: &str) -> Result<Option<SecretReference>, DbError> {
+pub fn get_reference(
+    conn: &Connection,
+    identity_key: &str,
+) -> Result<Option<SecretReference>, DbError> {
     let mut stmt = conn.prepare(
         "SELECT identity_key, file_path, location_kind, location_discriminator,
                 location_line_number, provider_pattern, fingerprint, display_label,
@@ -250,7 +256,11 @@ pub fn mark_unseen_as_removed(conn: &Connection, seen_keys: &[String]) -> Result
     }
 
     // Build a comma-separated list of placeholders
-    let placeholders: Vec<String> = seen_keys.iter().enumerate().map(|(i, _)| format!("?{}", i + 1)).collect();
+    let placeholders: Vec<String> = seen_keys
+        .iter()
+        .enumerate()
+        .map(|(i, _)| format!("?{}", i + 1))
+        .collect();
     let placeholders_str = placeholders.join(", ");
 
     // Mark present refs as removed
@@ -260,7 +270,10 @@ pub fn mark_unseen_as_removed(conn: &Connection, seen_keys: &[String]) -> Result
          WHERE scan_status = 'present' AND identity_key NOT IN ({})",
         placeholders_str
     );
-    let params: Vec<&dyn rusqlite::types::ToSql> = seen_keys.iter().map(|k| k as &dyn rusqlite::types::ToSql).collect();
+    let params: Vec<&dyn rusqlite::types::ToSql> = seen_keys
+        .iter()
+        .map(|k| k as &dyn rusqlite::types::ToSql)
+        .collect();
     let count = conn.execute(&sql, params.as_slice())?;
 
     // Increment counter for already-removed refs that remain unseen
@@ -392,10 +405,8 @@ pub fn get_group_by_id(conn: &Connection, group_id: &str) -> Result<Option<Secre
     }
 }
 
-fn get_group_members(conn: &Connection, group_id: &str) -> Result<Vec<String>, DbError> {
-    let mut stmt = conn.prepare(
-        "SELECT identity_key FROM group_members WHERE group_id = ?1",
-    )?;
+pub fn get_group_members(conn: &Connection, group_id: &str) -> Result<Vec<String>, DbError> {
+    let mut stmt = conn.prepare("SELECT identity_key FROM group_members WHERE group_id = ?1")?;
     let members = stmt
         .query_map(params![group_id], |row| row.get(0))?
         .collect::<Result<Vec<String>, _>>()?;
@@ -440,7 +451,11 @@ pub fn list_groups(conn: &Connection) -> Result<Vec<SecretGroup>, DbError> {
     Ok(result)
 }
 
-pub fn update_group_status(conn: &Connection, group_id: &Uuid, status: &GroupStatus) -> Result<(), DbError> {
+pub fn update_group_status(
+    conn: &Connection,
+    group_id: &Uuid,
+    status: &GroupStatus,
+) -> Result<(), DbError> {
     conn.execute(
         "UPDATE secret_groups SET status = ?1 WHERE group_id = ?2",
         params![status.to_string(), group_id.to_string()],
@@ -448,7 +463,11 @@ pub fn update_group_status(conn: &Connection, group_id: &Uuid, status: &GroupSta
     Ok(())
 }
 
-pub fn add_group_member(conn: &Connection, group_id: &Uuid, identity_key: &str) -> Result<(), DbError> {
+pub fn add_group_member(
+    conn: &Connection,
+    group_id: &Uuid,
+    identity_key: &str,
+) -> Result<(), DbError> {
     conn.execute(
         "INSERT OR IGNORE INTO group_members (group_id, identity_key) VALUES (?1, ?2)",
         params![group_id.to_string(), identity_key],
@@ -456,14 +475,13 @@ pub fn add_group_member(conn: &Connection, group_id: &Uuid, identity_key: &str) 
     Ok(())
 }
 
-pub fn remove_group_member(conn: &Connection, identity_key: &str) -> Result<Option<String>, DbError> {
+pub fn remove_group_member(
+    conn: &Connection,
+    identity_key: &str,
+) -> Result<Option<String>, DbError> {
     // Find which group this ref belongs to
-    let mut stmt = conn.prepare(
-        "SELECT group_id FROM group_members WHERE identity_key = ?1",
-    )?;
-    let group_id: Option<String> = stmt
-        .query_row(params![identity_key], |row| row.get(0))
-        .ok();
+    let mut stmt = conn.prepare("SELECT group_id FROM group_members WHERE identity_key = ?1")?;
+    let group_id: Option<String> = stmt.query_row(params![identity_key], |row| row.get(0)).ok();
 
     conn.execute(
         "DELETE FROM group_members WHERE identity_key = ?1",
@@ -479,9 +497,15 @@ pub fn delete_group(conn: &Connection, label: &str) -> Result<bool, DbError> {
     let group_id: Option<String> = stmt.query_row(params![label], |row| row.get(0)).ok();
 
     if let Some(gid) = group_id {
-        conn.execute("DELETE FROM group_members WHERE group_id = ?1", params![gid])?;
+        conn.execute(
+            "DELETE FROM group_members WHERE group_id = ?1",
+            params![gid],
+        )?;
         conn.execute("DELETE FROM drift_events WHERE group_id = ?1", params![gid])?;
-        conn.execute("DELETE FROM secret_groups WHERE group_id = ?1", params![gid])?;
+        conn.execute(
+            "DELETE FROM secret_groups WHERE group_id = ?1",
+            params![gid],
+        )?;
         Ok(true)
     } else {
         Ok(false)
@@ -517,7 +541,10 @@ pub fn insert_suggestion(conn: &Connection, s: &Suggestion) -> Result<(), DbErro
     Ok(())
 }
 
-pub fn list_suggestions(conn: &Connection, status: Option<&SuggestionStatus>) -> Result<Vec<Suggestion>, DbError> {
+pub fn list_suggestions(
+    conn: &Connection,
+    status: Option<&SuggestionStatus>,
+) -> Result<Vec<Suggestion>, DbError> {
     let sql = match status {
         Some(_) => "SELECT suggestion_id, reason, confidence, proposed_label, metadata_json, created_at, status
                      FROM suggestions WHERE status = ?1 ORDER BY confidence DESC",
@@ -559,9 +586,7 @@ pub fn list_suggestions(conn: &Connection, status: Option<&SuggestionStatus>) ->
 
 type SuggestionRow = (String, String, f64, Option<String>, String, String, String);
 
-fn map_suggestion(
-    row: &rusqlite::Row<'_>,
-) -> rusqlite::Result<SuggestionRow> {
+fn map_suggestion(row: &rusqlite::Row<'_>) -> rusqlite::Result<SuggestionRow> {
     Ok((
         row.get(0)?,
         row.get(1)?,
@@ -574,9 +599,8 @@ fn map_suggestion(
 }
 
 fn get_suggestion_refs(conn: &Connection, suggestion_id: &str) -> Result<Vec<String>, DbError> {
-    let mut stmt = conn.prepare(
-        "SELECT identity_key FROM suggestion_refs WHERE suggestion_id = ?1",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT identity_key FROM suggestion_refs WHERE suggestion_id = ?1")?;
     let refs = stmt
         .query_map(params![suggestion_id], |row| row.get(0))?
         .collect::<Result<Vec<String>, _>>()?;
@@ -629,7 +653,8 @@ pub fn suggestion_exists(
 // --- Drift Events ---
 
 pub fn insert_drift_event(conn: &Connection, event: &DriftEvent) -> Result<(), DbError> {
-    let fps_json = serde_json::to_string(&event.member_fingerprints).unwrap_or_else(|_| "{}".to_string());
+    let fps_json =
+        serde_json::to_string(&event.member_fingerprints).unwrap_or_else(|_| "{}".to_string());
     conn.execute(
         "INSERT INTO drift_events (group_id, detected_at, member_fingerprints_json, resolved, resolved_at)
          VALUES (?1, ?2, ?3, ?4, ?5)",
@@ -644,24 +669,43 @@ pub fn insert_drift_event(conn: &Connection, event: &DriftEvent) -> Result<(), D
     Ok(())
 }
 
-pub fn list_drift_events(conn: &Connection, group_id: Option<&Uuid>) -> Result<Vec<DriftEvent>, DbError> {
+pub fn list_drift_events(
+    conn: &Connection,
+    group_id: Option<&Uuid>,
+) -> Result<Vec<DriftEvent>, DbError> {
     let sql = match group_id {
-        Some(_) => "SELECT group_id, detected_at, member_fingerprints_json, resolved, resolved_at
-                     FROM drift_events WHERE group_id = ?1 ORDER BY detected_at DESC",
-        None => "SELECT group_id, detected_at, member_fingerprints_json, resolved, resolved_at
-                 FROM drift_events ORDER BY detected_at DESC",
+        Some(_) => {
+            "SELECT group_id, detected_at, member_fingerprints_json, resolved, resolved_at
+                     FROM drift_events WHERE group_id = ?1 ORDER BY detected_at DESC"
+        }
+        None => {
+            "SELECT group_id, detected_at, member_fingerprints_json, resolved, resolved_at
+                 FROM drift_events ORDER BY detected_at DESC"
+        }
     };
 
     let mut stmt = conn.prepare(sql)?;
 
     let rows: Vec<(String, String, String, bool, Option<String>)> = if let Some(gid) = group_id {
         stmt.query_map(params![gid.to_string()], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?))
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+            ))
         })?
         .collect::<Result<Vec<_>, _>>()?
     } else {
         stmt.query_map([], |row| {
-            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?, row.get(4)?))
+            Ok((
+                row.get(0)?,
+                row.get(1)?,
+                row.get(2)?,
+                row.get(3)?,
+                row.get(4)?,
+            ))
         })?
         .collect::<Result<Vec<_>, _>>()?
     };

@@ -7,6 +7,7 @@ pub mod group;
 pub mod index;
 pub mod keychain;
 pub mod policy;
+pub mod rotate;
 pub mod scan;
 pub mod suggest;
 pub mod watch;

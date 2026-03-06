@@ -11,6 +11,7 @@ mod group;
 mod index;
 mod keychain;
 mod policy;
+mod rotate;
 mod scan;
 mod suggest;
 mod watch;
@@ -128,6 +129,26 @@ enum Commands {
         json: bool,
     },
 
+    /// Show rotation info for a group
+    RotateInfo {
+        /// Group label
+        group_label: String,
+
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
+
+    /// Rotate a secret across all group members
+    Rotate {
+        /// Group label
+        group_label: String,
+
+        /// Create .bak backup of each modified file
+        #[arg(long)]
+        backup: bool,
+    },
+
     /// Watch for file changes and re-scan automatically
     Watch,
 }
@@ -156,6 +177,11 @@ fn main() {
         Commands::Forget { target } => cli::forget::run(&target),
         Commands::Export { format } => cli::export::run(&format),
         Commands::Audit { json } => cli::audit::run(json),
+        Commands::RotateInfo { group_label, json } => cli::rotate_info::run(&group_label, json),
+        Commands::Rotate {
+            group_label,
+            backup,
+        } => cli::rotate::run(&group_label, backup),
         Commands::Watch => cli::watch::run(),
     };
 

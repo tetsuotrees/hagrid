@@ -55,6 +55,8 @@ HKDF-SHA256:
 
     hagrid audit [--json]
     hagrid watch
+    hagrid rotate-info <group-label> [--json]
+    hagrid rotate <group-label> [--backup]
 
 ### Policy Engine
 
@@ -86,6 +88,32 @@ Watch mode applies the same exclusion filters as full scan (binary files,
 excluded dirs, hard-excluded paths, max file size). Deleted files are ignored
 (not treated as removal events).
 
+### Rotation Workflow
+
+The `hagrid rotate-info <group-label>` command displays the current state of
+a secret group: member files, locations, fingerprints, and drift status.
+
+The `hagrid rotate <group-label>` command interactively rotates a secret value
+across all present members of a group:
+
+1. Displays group info and files to be modified.
+2. Prompts for new secret value via `rpassword` (no terminal echo).
+3. Confirms value (enter twice).
+4. Previews files and asks for confirmation.
+5. Executes rotation with format-aware replacement:
+   - JSON: path-aware via `serde_json::Value::pointer_mut()`
+   - TOML: path-aware via dotted-path navigation
+   - EnvVar/ShellExport: line-targeted with discriminator validation
+   - RawLine: line-targeted `replacen()`
+6. Members are grouped by file_path for per-file transactions. A file is
+   written at most once per rotation attempt, and same-file preflight failures
+   abort the entire file.
+7. Each file is verified via re-scan after write. Verification or index-update
+   failure restores the original file content before continuing.
+8. Cross-file failures continue to next file (continue-and-report).
+
+Exit code 5 indicates partial failure (>= 1 succeeded AND >= 1 failed).
+
 ### D-1 Dedup Refinement
 
 In Standard depth, the scan engine now applies a second dedup pass that removes
@@ -101,6 +129,7 @@ report the same secret.
 - 2 -- usage error (invalid flags, unknown command)
 - 3 -- drift detected (`hagrid drift`)
 - 4 -- policy violation (`hagrid audit`, v0.2)
+- 5 -- partial rotation failure (`hagrid rotate`, v0.2)
 
 ## Security Invariants
 
@@ -122,7 +151,8 @@ See `docs/adr/` for detailed records:
 - ADR-007: MCP naming (hagrid_* namespace, v0.3)
 - ADR-008: Platform scope (macOS-only v0.1)
 - ADR-009: Policy engine (glob matching, evaluation scope, exit codes)
-- ADR-010: Watch mode (debounced events, upsert-only writes, D-1 dedup)
+- ADR-010: Watch mode (debounced events, upsert-only, scan_single_file)
+- ADR-011: Rotation workflow (format-aware replacement, per-file transactions)
 
 ## Milestone Plan
 

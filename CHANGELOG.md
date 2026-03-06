@@ -8,6 +8,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ### Added
 
+- `hagrid rotate-info <group-label> [--json]` for pre-rotation group inspection
+- `hagrid rotate <group-label> [--backup]` for interactive secret rotation across group members
+  - format-aware replacement: JSON (path-aware via pointer_mut), TOML (dotted-path), EnvVar/ShellExport (line-targeted with discriminator validation)
+  - per-file transaction model: multiple members in same file share single atomic write, and verification/index failures restore the original file
+  - cross-file continue-and-report: partial failures produce exit code 5
+  - secure value input via `rpassword` with `Zeroizing<String>`
+  - atomic writes (.hagrid-tmp + rename) with optional timestamped backup
+  - post-write verification via re-scan
+- exit code 5 for partial rotation failure
+- ADR-011: Rotation workflow design decisions
 - `hagrid watch` command for persistent file-change monitoring with debounced re-scan
 - `scan_single_file()` public API for per-file scanning (used by watch mode)
 - `hagrid audit [--json]` command for policy-based secret evaluation
@@ -42,4 +52,3 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - suggestion engine (exact-fingerprint and heuristic suggestions) with deduplication
 - group management and drift detection with degraded/empty handling
 - documentation set: threat model, spec summary, ADR set, execution planning docs
-

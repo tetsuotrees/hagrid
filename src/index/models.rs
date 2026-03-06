@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use uuid::Uuid;
 
 /// How a secret was located within a file.
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum LocationKind {
     JsonPath,
     EnvVar,
