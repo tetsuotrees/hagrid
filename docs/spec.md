@@ -1,6 +1,6 @@
 # Hagrid Technical Specification
 
-Version: v4 (final) -- v0.1 implementation
+Version: v5 -- v0.2 released, v0.3 planning active
 
 ## Overview
 
@@ -207,3 +207,7 @@ Execution is coordinated through these documents:
 - [docs/handoffs/dev-agent-04-rotation.md](handoffs/dev-agent-04-rotation.md): rotation workflow handoff packet
 - [docs/runbooks/05-notifications.md](runbooks/05-notifications.md): notifications execution runbook
 - [docs/handoffs/dev-agent-05-notifications.md](handoffs/dev-agent-05-notifications.md): notifications handoff packet
+- [docs/runbooks/06-release-hardening.md](runbooks/06-release-hardening.md): v0.2 release-hardening runbook
+- [docs/handoffs/dev-agent-06-release-hardening.md](handoffs/dev-agent-06-release-hardening.md): v0.2 release-hardening handoff
+- [docs/runbooks/07-tui-foundation.md](runbooks/07-tui-foundation.md): TUI foundation execution runbook
+- [docs/handoffs/dev-agent-07-tui-foundation.md](handoffs/dev-agent-07-tui-foundation.md): TUI foundation handoff packet

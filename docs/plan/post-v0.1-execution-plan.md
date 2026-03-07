@@ -1,17 +1,18 @@
 # Post-v0.1 Execution Plan
 
-Status date: 2026-03-06
+Status date: 2026-03-07
 
-This plan now tracks the repo after WS-8 landed on `origin/main`. The v0.2
-feature streams are complete. The next scoped delivery is a short release-
-hardening pass to prepare `v0.2.0`.
+This plan now tracks the repo after the `v0.2.0` release landed on
+`origin/main`. The v0.2 feature and release-hardening streams are complete.
+The next scoped delivery opens the v0.3 line with a read-only TUI foundation.
 
 ## Current Baseline
 
-- `origin/main` at `bf0b2e8` (`WS-8: stabilize webhook notification tests`)
+- `origin/main` at `f7c50cd` (`Docs: fix v0.2.0 release metadata`)
+- tag `v0.2.0` points to `f7c50cd`
 - `.github/workflows/ci.yml` exists and runs build, clippy, and test
 - `cargo test` currently passes with 190 test invocations across all targets
-- Completed v0.2 features:
+- Released in `v0.2.0`:
   - WS-5: policy engine + `hagrid audit`
   - WS-6: watch mode + D-1 dedup refinement
   - WS-7: transactional rotation workflow
@@ -56,66 +57,77 @@ Completed. `hagrid` now supports explicit-opt-in webhook notifications for
 drift, audit, and rotation failures with failure isolation, per-webhook event
 filtering, and payloads that exclude secret values.
 
+### WS-9: v0.2 Release Hardening
+
+Completed. `v0.2.0` release notes, changelog, version metadata, and release
+verification are in place. The CI check-name concern was verified as a repo
+policy behavior, not a workflow naming mismatch.
+
 ## Active Next Stream
 
-### WS-9: v0.2 Release Hardening
+### WS-10: TUI Foundation
 
 Objective:
 
-- prepare a release candidate for `v0.2.0`
-- close release-blocking documentation, verification, and CI-gating gaps
-- leave the repo ready for tag/publish on explicit user approval
+- open the v0.3 line with a local-only terminal UI
+- provide a read-only inspection surface over the existing index and group data
+- keep the first TUI slice narrow enough to stabilize state, layout, and
+  navigation before any mutation workflows are added
 
 Scope:
 
-- cut `v0.2.0` release documentation:
-  - `CHANGELOG.md`
-  - `docs/releases/v0.2.0.md`
-- verify and, if needed, fix CI or branch-protection check-name mismatch so the
-  required status check matches the actual workflow result
-- rerun build/clippy/test and a small CLI smoke pass for shipped v0.2 commands
-- patch any small release-blocking test or documentation gaps found during
-  hardening
-- document the exact release procedure and any remaining non-blocking follow-up
+- add `hagrid tui`
+- add a TUI module/app state layer that reads existing index/group/suggestion
+  data without shelling out to CLI subcommands
+- show a summary/dashboard plus navigable list/detail views for key inventory
+  data (for example groups, ungrouped refs, or suggestions)
+- implement keyboard navigation, refresh, and quit behavior
+- add tests for app-state transitions, data loading, and non-secret rendering
+- update docs/spec/runbook/handoff to reflect the shipped TUI behavior
 
 Scope out:
 
-- new user-facing features beyond release blockers
-- v0.3 TUI work
+- mutation flows from the TUI (`group`, `ungroup`, `forget`, `rotate`, etc.)
+- watch-mode embedding inside the TUI
+- notification configuration or delivery from the TUI
 - v0.3 MCP server work
 - provider-managed rotation or vault integration
 - watch-mode notifications
-- automatic tagging/publishing without explicit user approval
 
 Required deliverables:
 
-1. `CHANGELOG.md` with a `0.2.0` release entry.
-2. `docs/releases/v0.2.0.md` with release notes and verification checklist.
-3. Any workflow or documentation updates needed to align required CI checks with
-   the real workflow.
-4. Any targeted test/docs fixes required to make release claims accurate.
-5. A release-ready handoff summarizing final verification and remaining risks.
+1. TUI command wiring in `src/main.rs` and a new `src/tui/` module (or
+   equivalent).
+2. A read-only dashboard/list/detail flow over existing Hagrid data.
+3. Tests covering navigation/state transitions and safe rendering.
+4. Docs:
+   - technical spec update
+   - runbook
+   - handoff
+   - ADR only if the final TUI architecture introduces a durable rule
 
 Exit criteria:
 
 - `cargo build` passes
 - `cargo clippy --all-targets -- -D warnings` passes
 - `cargo test` passes across all targets
-- release notes accurately describe shipped v0.2 commands, security posture, and
-  known limitations
-- the CI required-check mismatch is resolved or documented with an explicit
-  blocker/escalation note
-- the repo is ready to tag `v0.2.0` once the user explicitly approves release
+- `hagrid tui` launches and exits cleanly
+- the TUI renders metadata only and never displays secret values
+- the TUI remains local-only with no network calls
+- the first slice is read-only; destructive or mutating actions remain out of
+  scope
 
 ## Sequence
 
-1. Execute WS-9 next.
-2. After WS-9, request explicit approval for `v0.2.0` tag/publish work.
-3. After `v0.2.0`, open v0.3 planning for TUI + MCP server.
+1. Execute WS-10 next.
+2. After WS-10, reassess TUI ergonomics and whether a second TUI slice is
+   needed before exposing write actions.
+3. Revisit ADR-007 against the current upstream MCP protocol before staging the
+   MCP server stream.
 
 ## Ownership and Handoff
 
-- Dev Agent owns execution of WS-9.
+- Dev Agent owns execution of WS-10.
 - Review/Planning Agent validates acceptance criteria, reviews correctness and
   safety, and updates this plan after each stream.
 - Every stream must include a handoff doc under `docs/handoffs/` before work

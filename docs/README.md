@@ -7,18 +7,20 @@ This folder is the operational source of truth for planning, execution, and arch
 1. [spec.md](spec.md): Product and technical scope for the current implementation line.
 2. [threat-model.md](threat-model.md): Security boundaries and invariants.
 3. [adr/README.md](adr/README.md): Architectural decisions and rationale.
-4. [plan/post-v0.1-execution-plan.md](plan/post-v0.1-execution-plan.md): Cross-workstream plan from v0.1 to v0.2.
+4. [plan/post-v0.1-execution-plan.md](plan/post-v0.1-execution-plan.md): Cross-workstream plan through the v0.3 opening streams.
 
 ## Active Execution Docs
 
 - [plan/post-v0.1-execution-plan.md](plan/post-v0.1-execution-plan.md): Current stream sequencing and acceptance criteria.
-- [runbooks/06-release-hardening.md](runbooks/06-release-hardening.md): Step-by-step runbook for WS-9 release hardening.
-- [handoffs/dev-agent-06-release-hardening.md](handoffs/dev-agent-06-release-hardening.md): Dev-agent handoff packet for WS-9.
+- [runbooks/07-tui-foundation.md](runbooks/07-tui-foundation.md): Step-by-step runbook for WS-10 TUI foundation.
+- [handoffs/dev-agent-07-tui-foundation.md](handoffs/dev-agent-07-tui-foundation.md): Dev-agent handoff packet for WS-10.
 - [../CHANGELOG.md](../CHANGELOG.md): Release history and unreleased queue.
-- [releases/v0.1.0.md](releases/v0.1.0.md): v0.1.0 release notes.
+- [releases/v0.2.0.md](releases/v0.2.0.md): v0.2.0 release notes.
 
 ## Recently Completed Streams
 
+- [runbooks/06-release-hardening.md](runbooks/06-release-hardening.md): WS-9 release hardening.
+- [handoffs/dev-agent-06-release-hardening.md](handoffs/dev-agent-06-release-hardening.md): WS-9 release hardening handoff.
 - [runbooks/05-notifications.md](runbooks/05-notifications.md): WS-8 notifications.
 - [handoffs/dev-agent-05-notifications.md](handoffs/dev-agent-05-notifications.md): WS-8 delivery handoff.
 - [runbooks/04-rotation.md](runbooks/04-rotation.md): WS-7 rotation workflow.
