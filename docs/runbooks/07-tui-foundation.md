@@ -1,6 +1,6 @@
 # Runbook 07: TUI Foundation (WS-10)
 
-**Status: Ready**
+**Status: Complete**
 
 ## Purpose
 
@@ -110,13 +110,13 @@ cargo test
 
 ## Acceptance Checklist
 
-- [ ] `cargo build` passes
-- [ ] `cargo clippy --all-targets -- -D warnings` passes
-- [ ] `cargo test` passes across all targets
-- [ ] `hagrid tui` launches and exits cleanly
-- [ ] the TUI is read-only in this stream
-- [ ] the TUI renders metadata only and never displays secret values
-- [ ] no network calls are introduced
+- [x] `cargo build` passes
+- [x] `cargo clippy --all-targets -- -D warnings` passes
+- [x] `cargo test` passes across all targets (266 tests, up from 195 baseline)
+- [x] `hagrid tui` launches and exits cleanly
+- [x] the TUI is read-only in this stream
+- [x] the TUI renders metadata only and never displays secret values
+- [x] no network calls are introduced
 
 ## Failure Handling
 
@@ -129,10 +129,49 @@ cargo test
   - refactor before adding more views; the first slice should leave a stable
     base for future TUI work
 
-## Evidence to Return
+## Execution Evidence
 
-- commit hashes
-- exact verification command outcomes
-- brief description of the shipped views and keybindings
-- any deferred UX or interaction follow-ups
-- whether the branch is ready to push
+### Commits
+
+- `5894c45` -- WS-10a: TUI command + app state + rendering + tests
+- (this commit) -- WS-10b: docs/spec/runbook/handoff updates
+
+### Verification
+
+- `cargo build` -- clean
+- `cargo clippy --all-targets -- -D warnings` -- clean
+- `cargo test` -- 266 tests passing (71 new TUI tests)
+
+### Shipped Views and Keybindings
+
+**Layout:**
+- Summary header: ref count, group count, ungrouped count, pending suggestions, drift
+- Groups section: label, status (color-coded), member count
+- Ungrouped section: display ID, file path, discriminator, provider
+- Detail pane: group or reference metadata
+- Footer: context-sensitive keybinding hints
+
+**Keybindings:**
+- `j`/`k`/`Down`/`Up` -- navigate list
+- `Tab` -- switch between Groups and Ungrouped sections
+- `Enter` -- open detail view
+- `Backspace`/`Esc` (in detail) -- back to list
+- `r` -- refresh data
+- `q`/`Esc` (in list)/`Ctrl-c` -- quit
+
+### Dependencies Added
+
+- `ratatui 0.29` -- terminal UI rendering framework
+- `crossterm 0.28` -- cross-platform terminal backend
+
+### Deferred UX Follow-ups
+
+- Scrollable detail view for groups with many members
+- Search/filter within list views
+- Status bar with last-scan timestamp
+- Mutation flows (group, ungroup, forget) in future TUI streams
+- Suggestion review workflow in TUI
+
+### Branch Status
+
+Branch is ready to push (2 commits ahead of `origin/main`).

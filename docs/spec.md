@@ -1,6 +1,6 @@
 # Hagrid Technical Specification
 
-Version: v5 -- v0.2 released, v0.3 planning active
+Version: v6 -- v0.2 released, v0.3 TUI foundation shipped
 
 ## Overview
 
@@ -141,6 +141,38 @@ Emitters:
 - `hagrid drift` → `drift_detected` when drift is found (exit code 3)
 - `hagrid audit` → `policy_violations` when violations are found (exit code 4)
 - `hagrid rotate` → `rotation_failure` on partial (exit code 5) or full failure (exit code 1)
+
+## TUI (v0.3)
+
+    hagrid tui
+
+### Terminal UI
+
+The `hagrid tui` command launches an interactive terminal interface for browsing
+Hagrid's inventory. Built with `ratatui` + `crossterm`.
+
+Layout:
+- **Header** -- summary counts (refs, groups, ungrouped, pending suggestions, drift)
+- **Groups section** -- list of confirmed groups with status and member count
+- **Ungrouped section** -- list of ungrouped present references with display ID,
+  file path, discriminator, and provider
+- **Detail pane** -- expanded view of the selected group or reference
+- **Footer** -- context-sensitive keybinding hints
+
+Keybindings:
+- `j` / `Down` -- move selection down
+- `k` / `Up` -- move selection up
+- `Tab` -- switch between Groups and Ungrouped sections
+- `Enter` -- open detail view for selected item
+- `Backspace` / `Esc` (in detail) -- return to list view
+- `r` -- refresh data from database
+- `q` / `Esc` (in list) / `Ctrl-c` -- quit
+
+Constraints:
+- Read-only -- no mutation flows (group, ungroup, rotate, etc.)
+- Metadata only -- never displays secret values; fingerprints are truncated
+- Local only -- no network calls
+- Data is loaded directly from the database via library code (no subprocess shelling)
 
 ### D-1 Dedup Refinement
 

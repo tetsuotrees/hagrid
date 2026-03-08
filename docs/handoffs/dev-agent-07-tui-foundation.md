@@ -3,7 +3,7 @@
 Date: 2026-03-07
 Prepared by: Review/Planning Agent
 Executor: Dev Agent
-**Status: Ready**
+**Status: Complete**
 
 ## Mission
 
@@ -81,12 +81,35 @@ layout/navigation without taking on mutating workflows yet.
 4. If a terminal UI dependency is added, keep the stack minimal and justify it
    in the report-back.
 
-## Report Back Format
+## Execution Report
 
-Provide a single summary with:
+### Commits
+- `5894c45` -- WS-10a: TUI command + app state + rendering + tests
+- (docs commit) -- WS-10b: docs/spec/runbook/handoff updates
 
-- commit hashes
-- exact verification command outcomes
-- the shipped views and keybindings
-- any deferred UX follow-ups
-- whether the branch is ready to push
+### Verification
+- `cargo build` -- clean
+- `cargo clippy --all-targets -- -D warnings` -- clean
+- `cargo test` -- 266 tests passing (71 new)
+
+### Architecture
+- `src/tui/mod.rs` -- entry point, terminal setup, event loop
+- `src/tui/app.rs` -- app state, data loading, navigation model
+- `src/tui/ui.rs` -- ratatui rendering (header, list, detail, footer)
+- `src/tui/input.rs` -- key event handling, action dispatch
+- `tests/tui_tests.rs` -- 17 integration tests against temp-db fixtures
+
+### Dependencies
+- `ratatui 0.29` + `crossterm 0.28` (standard Rust TUI stack)
+
+### Shipped Views
+- Summary header, Groups list, Ungrouped list, Detail pane, Keybinding footer
+
+### Keybindings
+- j/k/arrows: navigate, Tab: switch section, Enter: detail, Backspace/Esc: back, r: refresh, q: quit
+
+### Deferred
+- Scrollable detail, search/filter, mutation flows, suggestion review in TUI
+
+### Branch Status
+Ready to push (2 commits ahead of `origin/main`).
