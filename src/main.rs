@@ -15,6 +15,7 @@ mod policy;
 mod rotate;
 mod scan;
 mod suggest;
+mod tui;
 mod watch;
 
 #[derive(Parser)]
@@ -152,6 +153,9 @@ enum Commands {
 
     /// Watch for file changes and re-scan automatically
     Watch,
+
+    /// Launch interactive terminal UI for browsing inventory
+    Tui,
 }
 
 fn main() {
@@ -184,6 +188,7 @@ fn main() {
             backup,
         } => cli::rotate::run(&group_label, backup),
         Commands::Watch => cli::watch::run(),
+        Commands::Tui => tui::run(),
     };
 
     process::exit(exit_code);

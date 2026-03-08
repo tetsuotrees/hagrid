@@ -11,4 +11,5 @@ pub mod policy;
 pub mod rotate;
 pub mod scan;
 pub mod suggest;
+pub mod tui;
 pub mod watch;
