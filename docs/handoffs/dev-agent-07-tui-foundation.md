@@ -85,12 +85,12 @@ layout/navigation without taking on mutating workflows yet.
 
 ### Commits
 - `5894c45` -- WS-10a: TUI command + app state + rendering + tests
-- (docs commit) -- WS-10b: docs/spec/runbook/handoff updates
+- `5d2d150` -- WS-10b: docs/spec/runbook/handoff updates
 
 ### Verification
 - `cargo build` -- clean
 - `cargo clippy --all-targets -- -D warnings` -- clean
-- `cargo test` -- 266 tests passing (71 new)
+- `cargo test` -- 261 test invocations passing across all targets (71 new)
 
 ### Architecture
 - `src/tui/mod.rs` -- entry point, terminal setup, event loop

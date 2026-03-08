@@ -112,7 +112,7 @@ cargo test
 
 - [x] `cargo build` passes
 - [x] `cargo clippy --all-targets -- -D warnings` passes
-- [x] `cargo test` passes across all targets (266 tests, up from 195 baseline)
+- [x] `cargo test` passes across all targets (261 test invocations, up from 190 baseline)
 - [x] `hagrid tui` launches and exits cleanly
 - [x] the TUI is read-only in this stream
 - [x] the TUI renders metadata only and never displays secret values
@@ -134,13 +134,13 @@ cargo test
 ### Commits
 
 - `5894c45` -- WS-10a: TUI command + app state + rendering + tests
-- (this commit) -- WS-10b: docs/spec/runbook/handoff updates
+- `5d2d150` -- WS-10b: docs/spec/runbook/handoff updates
 
 ### Verification
 
 - `cargo build` -- clean
 - `cargo clippy --all-targets -- -D warnings` -- clean
-- `cargo test` -- 266 tests passing (71 new TUI tests)
+- `cargo test` -- 261 test invocations passing across all targets (71 new)
 
 ### Shipped Views and Keybindings
 

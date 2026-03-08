@@ -15,6 +15,15 @@ use ratatui::Terminal;
 use crate::cli;
 use input::KeyAction;
 
+struct TerminalCleanup;
+
+impl Drop for TerminalCleanup {
+    fn drop(&mut self) {
+        let _ = disable_raw_mode();
+        let _ = io::stdout().execute(LeaveAlternateScreen);
+    }
+}
+
 /// Entry point for `hagrid tui`. Returns an exit code.
 pub fn run() -> i32 {
     let (conn, _keys) = match cli::open_db() {
@@ -40,6 +49,7 @@ fn run_tui(app: &mut app::App, conn: &rusqlite::Connection) -> io::Result<()> {
     // Setup terminal
     enable_raw_mode()?;
     io::stdout().execute(EnterAlternateScreen)?;
+    let _cleanup = TerminalCleanup;
     let backend = CrosstermBackend::new(io::stdout());
     let mut terminal = Terminal::new(backend)?;
 
@@ -65,10 +75,6 @@ fn run_tui(app: &mut app::App, conn: &rusqlite::Connection) -> io::Result<()> {
             }
         }
     }
-
-    // Restore terminal
-    disable_raw_mode()?;
-    io::stdout().execute(LeaveAlternateScreen)?;
 
     Ok(())
 }

@@ -351,7 +351,7 @@ fn draw_error(f: &mut Frame, error: &str, area: Rect) {
 fn draw_footer(f: &mut Frame, app: &App, area: Rect) {
     let keys = match app.view {
         View::List => " q:quit  r:refresh  Tab:section  j/k:navigate  Enter:detail ",
-        View::Detail => " q:quit  r:refresh  Backspace/Esc:back  j/k:scroll ",
+        View::Detail => " q:quit  r:refresh  Backspace/Esc:back ",
     };
     let footer = Paragraph::new(Span::styled(
         keys,
